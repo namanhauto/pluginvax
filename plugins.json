@@ -7,6 +7,13 @@
             "version": "1.0.9",
             "scriptUrl": "https://github.com/namanhauto/pluginvax/raw/refs/heads/main/Plugins/bluphim_plugin.js", 
             "iconUrl": "https://bluphim.me/favicon.ico"
+        },
+        {
+            "id": "kkphim_api",
+            "name": "KKPhim",
+            "version": "1.0.9",
+            "scriptUrl": "https://phimapi.com", 
+            "iconUrl": "https://kkphim1.com/favicon.ico"
         }
     ]
 }
