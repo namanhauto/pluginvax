@@ -8,8 +8,10 @@ function getManifest() {
         "version": "1.0.0",          
         "baseUrl": "https://bluphim.me",
         "iconUrl": "https://bluphim.me/favicon.ico", 
-        "isEnabled": true,       
+        "isEnabled": true,
+        "isAdult": false,            
         "type": "MOVIE",
+        "layoutType": "VERTICAL"
     });
 }
 
@@ -193,4 +195,7 @@ function parseDetailResponse(html) {
             "headers": { "Referer": "https://bluphim.me/", "Origin": "https://bluphim.me/" },
             "subtitles": []
         });
+    } catch (e) {
+        return JSON.stringify({"url": ""});
     }
+}
