@@ -3,8 +3,8 @@
 // =============================================================================
 function getManifest() {
     return JSON.stringify({
-        "id": "bluphim_me_v1",       
-        "name": "BluPhim",           
+        "id": "bluphim_me",
+        "name": "BluPhim",         
         "version": "1.0.4",          
         "baseUrl": "https://bluphim.me",
         "iconUrl": "https://bluphim.me/favicon.ico", 
