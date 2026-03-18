@@ -2,8 +2,8 @@
     "version": 1,
     "plugins": [
         {
-        "id": "bluphim_me",
-        "name": "BluPhim",
+    "id": "bluphim_me_v1",  // Sửa lại thành blu (không có chữ e)
+    "name": "BluPhim",
             "version": "1.0.4",
             "scriptUrl": "https://raw.githubusercontent.com/namanhauto/pluginvax/refs/heads/main/bluphim_plugin.js", 
             "iconUrl": "https://bluphim.me/favicon.ico"
