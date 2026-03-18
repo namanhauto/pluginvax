@@ -7,7 +7,7 @@ function getManifest() {
         "name": "KKPhim",
         "version": "1.0.0",
         "baseUrl": "https://phimapi.com",
-        "iconUrl": "https://kkphim1.com/favicon.ico",
+        "iconUrl": "https://raw.githubusercontent.com/namanhauto/pluginvax/refs/heads/main/Plugins/KKphim_logo.png",
         "isEnabled": true,
         "type": "MOVIE",
         "layoutType": "VERTICAL"
