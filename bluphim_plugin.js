@@ -45,6 +45,9 @@ function getUrlSearch(keyword, page) {
 }
 
 function getUrlDetail(slug) {
+    if (slug.indexOf('http') === 0) return slug;
+    // Chống lỗi gạch chéo dư thừa
+    slug = slug.replace(/^\/+|\/+$/g, ''); 
     return "https://bluphim.me/" + slug + "/"; 
 }
 
@@ -57,8 +60,10 @@ function parseListResponse(html) {
         var block = blocks[i];
         var linkMatch = block.match(/<a href="([^"]+)"/);
         var url = linkMatch ? linkMatch[1] : "";
-        var idMatch = url.match(/\/([^\/]+)\/?$/);
-        var id = idMatch ? idMatch[1] : url;
+        
+        // Cắt HTTP đi, chỉ lấy SLUG làm ID để App không hiểu nhầm là link video
+        var slugMatch = url.match(/bluphim\.me\/(.+)$/);
+        var id = slugMatch ? slugMatch[1].replace(/\/$/, '') : url;
 
         var titleMatch = block.match(/<h3 class="movie-title">[\s\S]*?<a[^>]+>([^<]+)<\/a>/);
         var title = titleMatch ? titleMatch[1].trim() : "N/A";
@@ -117,10 +122,15 @@ function parseMovieDetail(html) {
         var epMatch;
         
         while ((epMatch = epRegex.exec(block)) !== null) {
+            var fullUrl = epMatch[1];
+            // Cắt HTTP đi, chỉ ép lấy SLUG để an toàn đi qua ải Player
+            var slugMatch = fullUrl.match(/bluphim\.me\/(.+)$/);
+            var slug = slugMatch ? slugMatch[1].replace(/\/$/, '') : fullUrl;
+
             episodes.push({
-                "id": epMatch[1], 
+                "id": slug, 
                 "name": "Tập " + epMatch[2].trim(),
-                "slug": epMatch[1] 
+                "slug": slug 
             });
         }
 
@@ -141,7 +151,7 @@ function parseMovieDetail(html) {
 function parseDetailResponse(html) {
     var url = "";
     
-    // Nâng cấp Regex: Bắt chính xác mảng all_sources
+    // Bắt chính xác mảng all_sources
     var match = html.match(/all_sources\s*=\s*\[\s*["']([^"']+)["']/i);
     if (match && match[1]) { 
         url = match[1]; 
@@ -156,7 +166,6 @@ function parseDetailResponse(html) {
     return JSON.stringify({
         "url": url,
         "headers": { 
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Referer": "https://bluphim.me/", 
             "Origin": "https://bluphim.me/" 
         },
