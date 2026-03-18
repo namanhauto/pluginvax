@@ -7,7 +7,7 @@ function getManifest() {
         "name": "YanHH3D",           
         "version": "1.0.1",          
         "baseUrl": "https://yanhh3d.sh",
-        "iconUrl": "https://github.com/namanhauto/pluginvax/blob/main/Plugins/Yahh3d_logo.png?raw=true", 
+        "iconUrl": "iconUrl": "https://raw.githubusercontent.com/namanhauto/pluginvax/main/Plugins/Yahh3d_logo.png", 
         "isEnabled": true,
         "isAdult": false,            
         "type": "MOVIE",
