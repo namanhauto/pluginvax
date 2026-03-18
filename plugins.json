@@ -19,7 +19,7 @@
         "id": "yanhh3d",       
         "name": "YanHH3D",    
             "version": "1.0.1",
-            "scriptUrl": "https://github.com/namanhauto/pluginvax/raw/refs/heads/main/Plugins/Yanhh3d"
+            "scriptUrl": "https://raw.githubusercontent.com/namanhauto/pluginvax/refs/heads/main/Plugins/Yanhh3d.js"
         }
     ]
 }
