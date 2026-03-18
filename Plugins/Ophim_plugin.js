@@ -61,7 +61,7 @@ function getUrlList(slug, filtersJson) {
         
         // OPhim dùng link riêng cho Phim mới cập nhật
         if (slug === 'phim-moi-cap-nhat') {
-            return "https://ophim17.cc/danh-sach/phim-moi-cap-nhat?page=" + page;
+            return "https://ophim1.com/danh-sach/phim-moi-cap-nhat?page=" + page;
         }
 
         var basePath = "danh-sach";
@@ -70,7 +70,7 @@ function getUrlList(slug, filtersJson) {
             basePath = "the-loai";
         }
         
-        var url = "https://ophim17.cc/v1/api/" + basePath + "/" + slug + "?page=" + page + "&limit=24";
+        var url = "https://ophim1.com/v1/api/" + basePath + "/" + slug + "?page=" + page + "&limit=24";
 
         if (filters.sort) url += "&sort_field=" + filters.sort;
         if (filters.filter) url += "&sort_lang=" + filters.filter;
@@ -80,7 +80,7 @@ function getUrlList(slug, filtersJson) {
 
         return url;
     } catch (e) {
-        return "https://ophim17.cc/v1/api/danh-sach/" + slug + "?page=1";
+        return "https://ophim1.com/v1/api/danh-sach/" + slug + "?page=1";
     }
 }
 
@@ -88,18 +88,18 @@ function getUrlSearch(keyword, filtersJson) {
     try {
         var filters = JSON.parse(filtersJson || "{}");
         var page = filters.page || 1;
-        return "https://ophim17.cc/v1/api/tim-kiem?keyword=" + encodeURIComponent(keyword) + "&page=" + page + "&limit=24";
+        return "https://ophim1.com/v1/api/tim-kiem?keyword=" + encodeURIComponent(keyword) + "&page=" + page + "&limit=24";
     } catch (e) {
-        return "https://ophim17.cc/v1/api/tim-kiem?keyword=" + encodeURIComponent(keyword) + "&limit=24";
+        return "https://ophim1.com/v1/api/tim-kiem?keyword=" + encodeURIComponent(keyword) + "&limit=24";
     }
 }
 
 function getUrlDetail(slug) {
-    return "https://ophim17.cc/phim/" + slug;
+    return "https://ophim1.com/phim/" + slug;
 }
 
-function getUrlCategories() { return "https://ophim17.cc/the-loai"; }
-function getUrlCountries() { return "https://ophim17.cc/quoc-gia"; }
+function getUrlCategories() { return "https://ophim1.com/the-loai"; }
+function getUrlCountries() { return "https://ophim1.com/quoc-gia"; }
 function getUrlYears() { return "local://years"; }
 
 // =============================================================================
@@ -218,7 +218,7 @@ function parseDetailResponse(apiResponseJson) {
         url: "", // App VAAPP sẽ tự động lấy link M3U8 từ phần ID tập phim ở trên
         headers: { 
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Origin": "https://ophim17.cc/" 
+            "Origin": "https://ophim1.com/" 
         },
         subtitles: []
     });
