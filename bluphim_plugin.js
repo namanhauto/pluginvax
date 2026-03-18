@@ -1,111 +1,126 @@
 function getManifest() {
-    return {
-        "id": "bluphim_me_v1",
-        "name": "BluPhim",
-        "version": "1.0.0",
+    return JSON.stringify({
+        "id": "bluphim_me_v1",       
+        "name": "BluPhim",           
+        "version": "1.0.0",          
         "baseUrl": "https://bluphim.me",
-        "iconUrl": "https://bluphim.me/favicon.ico", // Em có thể thay bằng link logo vuông đẹp hơn nếu muốn
+        "iconUrl": "https://bluphim.me/favicon.ico", 
         "isEnabled": true,
-        "isAdult": false, // Chỉnh thành true nếu là web 18+ nhé
-        "type": "MOVIE",
-        "layoutType": "VERTICAL" // Phim lẻ/bộ thường dùng Vertical (Dọc) để hiện Poster
-    };
+        "isAdult": false,            
+        "type": "MOVIE"
+    });
 }
-// 1. Lấy URL Trang chủ (App sẽ gọi hàm này đầu tiên)
+
 function getUrlHome(page) {
-    // Nếu trang chủ có phân trang thì thêm ?page=... hoặc /trang-...
-    return `https://bluphim.me/phim-moi?page=${page}`; 
+    return "https://bluphim.me/phim-moi?page=" + page;
 }
 
-// 2. Lấy URL Tìm kiếm
 function getUrlSearch(keyword, page) {
-    // keyword đã được encode, ví dụ: "avenger"
-    return `https://bluphim.me/tim-kiem?q=${keyword}&page=${page}`;
+    return "https://bluphim.me/tim-kiem?q=" + encodeURIComponent(keyword) + "&page=" + page;
 }
 
-// 3. Lấy URL Thể loại (Category)
-function getUrlCategory(categorySlug, page) {
-    return `https://bluphim.me/the-loai/${categorySlug}?page=${page}`;
+function getUrlDetail(slug) {
+    return "https://bluphim.me/" + slug + "/"; 
 }
+
 function parseListResponse(html) {
-    const items = [];
-    
-    // Nơi đây chúng ta sẽ viết Regex để tìm tất cả các khối HTML chứa phim
-    // Ví dụ: const blockRegex = /<article class="item">(.*?)<\/article>/gs;
-    // Lặp qua từng khối và bóc tách title, posterUrl, id...
+    var items = []; 
+    var blocks = html.split('class="movie-card-2"');
+    blocks.shift(); 
 
-    return {
-        "items": items,
-        "pagination": { "currentPage": 1, "totalPages": 10, "totalItems": 100, "itemsPerPage": 20 }
-    };
-}
-function parseListResponse(html) {
-    const items = [];
-    
-    // 1. Chẻ HTML thành các khối nhỏ, mỗi khối là 1 bộ phim
-    const blocks = html.split('<div class="movie-card-2">');
-    blocks.shift(); // Cắt bỏ mẩu HTML rác đầu tiên (trước chữ movie-card-2)
+    for (var i = 0; i < blocks.length; i++) {
+        var block = blocks[i];
+        var linkMatch = block.match(/<a href="([^"]+)"/);
+        var url = linkMatch ? linkMatch[1] : "";
+        var idMatch = url.match(/\/([^\/]+)\/?$/);
+        var id = idMatch ? idMatch[1] : url;
 
-    // 2. Lặp qua từng khối phim để bóc dữ liệu
-    blocks.forEach(block => {
-        // --- Bắt Link URL & ID (Slug) ---
-        // Match ví dụ: <a href="https://bluphim.me/han-the-nha-toi-khong-de-choc/"
-        const linkMatch = block.match(/<a href="([^"]+)"/);
-        if (!linkMatch) return; // Nếu lỗi không thấy link thì bỏ qua phim này
-        
-        const url = linkMatch[1];
-        // Lọc lấy đoạn cuối cùng làm ID: "han-the-nha-toi-khong-de-choc"
-        const idMatch = url.match(/\/([^\/]+)\/?$/);
-        const id = idMatch ? idMatch[1] : url;
+        var titleMatch = block.match(/<h3 class="movie-title">[\s\S]*?<a[^>]+>([^<]+)<\/a>/);
+        var title = titleMatch ? titleMatch[1].trim() : "N/A";
 
-        // --- Bắt Tên Phim (Title) ---
-        // Nằm trong: <h3 class="movie-title"><a ...>Tên Phim</a>
-        const titleMatch = block.match(/<h3 class="movie-title">[\s\S]*?<a[^>]+>([^<]+)<\/a>/);
-        const title = titleMatch ? titleMatch[1].trim() : "N/A";
+        var posterMatch = block.match(/src="([^"]+)"/);
+        var posterUrl = posterMatch ? posterMatch[1] : "";
 
-        // --- Bắt Link Ảnh (Poster) ---
-        // Nằm trong: <img ... src="link_anh.webp"
-        const posterMatch = block.match(/src="([^"]+)"/);
-        const posterUrl = posterMatch ? posterMatch[1] : "";
-
-        // --- Bắt Chất Lượng (Quality) ---
-        // Ví dụ: <span class="badge quality-badge">HD</span>
-        const qualityMatch = block.match(/quality-badge">([^<]+)<\/span>/);
-        const quality = qualityMatch ? qualityMatch[1].trim() : "";
-
-        // --- Bắt Số Tập (Episode) ---
-        // Có thể là "FULL" hoặc nằm trong thẻ con <span class="chip epi">Tập 24/24</span>
-        const epiMatch = block.match(/episode-badge">([\s\S]*?)<\/span>/);
-        let episode_current = "";
+        var epiMatch = block.match(/episode-badge">([\s\S]*?)<\/span>/);
+        var episode_current = "";
         if (epiMatch) {
-            // Xóa toàn bộ thẻ HTML con bên trong, chỉ lấy chữ thô và xóa khoảng trắng thừa
             episode_current = epiMatch[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
         }
 
-        // Đóng gói thành chuẩn JSON cho App
-        items.push({
-            "id": id,
-            "title": title,
-            "posterUrl": posterUrl,
-            "backdropUrl": posterUrl, // Thường web list ít có ảnh ngang, ta dùng lại ảnh dọc
-            "description": "",
-            "year": 0, // List không hiển thị năm, set 0
-            "quality": quality,
-            "episode_current": episode_current,
-            "lang": "Vietsub/Thuyết Minh" // Hardcode tạm do HTML không hiện
-        });
-    });
-
-    // --- Xử lý Phân trang (Pagination) ---
-    // (Làm tạm: Vì HTML em gửi chỉ có list phim, chưa có khối phân trang ở cuối trang. 
-    // Em có thể tự thêm Regex tìm thẻ <ul> <li> phân trang sau nhé, giờ thầy mock cứng để chạy trước)
-    return {
-        "items": items,
-        "pagination": { 
-            "currentPage": 1, 
-            "totalPages": 50, 
-            "totalItems": 1000, 
-            "itemsPerPage": items.length 
+        if (id && title !== "N/A") {
+            items.push({
+                "id": id,
+                "title": title,
+                "posterUrl": posterUrl,
+                "year": 0,
+                "quality": "HD",
+                "episode_current": episode_current
+            });
         }
-    };
+    }
+
+    return JSON.stringify({
+        "items": items,
+        "pagination": { "currentPage": 1, "totalPages": 50, "totalItems": 1000, "itemsPerPage": 20 }
+    });
+}
+
+function parseMovieDetail(html) {
+    var titleMatch = html.match(/<h1 class="movie-title-detail">([\s\S]*?)<\/h1>/);
+    var title = titleMatch ? titleMatch[1].trim() : "N/A";
+
+    var posterMatch = html.match(/class="movie-box-img"[\s\S]*?src="([^"]+)"/);
+    var posterUrl = posterMatch ? posterMatch[1] : "";
+
+    var descMatch = html.match(/content-detail">([\s\S]*?)<div class="hidden">/);
+    var description = "";
+    if (descMatch) {
+        description = descMatch[1].replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim();
+    }
+
+    var servers = [];
+    var serverBlocks = html.split('class="title_server"');
+    serverBlocks.shift(); 
+
+    for (var i = 0; i < serverBlocks.length; i++) {
+        var block = serverBlocks[i];
+        var nameMatch = block.match(/<h3>([\s\S]*?)<\/h3>/);
+        var serverName = nameMatch ? nameMatch[1].trim() : "Server " + (i+1);
+
+        var episodes = [];
+        var epRegex = /<a href="([^"]+)"[^>]*>[\s\S]*?<div class="episode-number">([\s\S]*?)<\/div>/g;
+        var epMatch;
+        
+        while ((epMatch = epRegex.exec(block)) !== null) {
+            episodes.push({
+                "id": epMatch[1], 
+                "name": "Tập " + epMatch[2].trim(),
+                "slug": epMatch[1] 
+            });
+        }
+
+        if (episodes.length > 0) {
+            servers.push({ "name": serverName, "episodes": episodes });
+        }
+    }
+
+    return JSON.stringify({
+        "id": title, 
+        "title": title,
+        "posterUrl": posterUrl,
+        "description": description,
+        "servers": servers 
+    });
+}
+
+function parseDetailResponse(html) {
+    var url = "";
+    var match = html.match(/var\s+all_sources\s*=\s*\[\s*"([^"]+)"/);
+    if (match) { url = match[1]; }
+
+    return JSON.stringify({
+        "url": url,
+        "headers": { "Referer": "https://bluphim.me/", "Origin": "https://bluphim.me/" },
+        "subtitles": []
+    });
 }
