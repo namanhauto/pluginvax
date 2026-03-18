@@ -5,7 +5,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "bluphim_me",       
         "name": "BluPhim",           
-        "version": "1.0.5",          
+        "version": "1.0.6",          
         "baseUrl": "https://bluphim.me",
         "iconUrl": "https://bluphim.me/favicon.ico", 
         "isEnabled": true,
@@ -17,7 +17,7 @@ function getManifest() {
 
 function getHomeSections() {
     return JSON.stringify([
-        // Đưa Phim Mới lên đầu với kiểu Banner (Tùy App hỗ trợ hiện ảnh to trượt ngang)
+        // Đổi type thành 'Banner' hy vọng App VAAPP sẽ kích hoạt banner to
         { slug: 'phim-moi', title: '🔥 Phim Mới Cập Nhật', type: 'Banner', path: 'danh-sach' },
         { slug: 'phim-bo', title: 'Phim Bộ', type: 'Horizontal', path: 'danh-sach' },
         { slug: 'phim-le', title: 'Phim Lẻ', type: 'Horizontal', path: 'danh-sach' },
@@ -26,59 +26,49 @@ function getHomeSections() {
     ]);
 }
 
+// KHAI BÁO BỘ LỌC ĐẦY ĐỦ HƠN (THÊM QUỐC GIA)
+function getFilterConfig() {
+    return JSON.stringify({
+        categories: [
+            { name: 'Hành Động', slug: 'hanh-dong' },
+            { name: 'Miền Tây', slug: 'mien-tay' },
+            { name: 'Trẻ Em', slug: 'tre-em' },
+            { name: 'Lịch Sử', slug: 'lich-su' },
+            { name: 'Cổ Trang', slug: 'co-trang' },
+            { name: 'Kinh Dị', slug: 'kinh-di' },
+            { name: 'Tâm Lý', slug: 'tam-ly' }
+        ],
+        countries: [
+            { name: 'Âu Mỹ', slug: 'au-my' },
+            { name: 'Hàn Quốc', slug: 'han-quoc' },
+            { name: 'Trung Quốc', slug: 'trung-quoc' }
+        ]
+    });
+}
+
 function getPrimaryCategories() {
     return JSON.stringify([
         { name: 'Hành Động', slug: 'hanh-dong' },
         { name: 'Miền Tây', slug: 'mien-tay' },
-        { name: 'Trẻ Em', slug: 'tre-em' },
-        { name: 'Lịch Sử', slug: 'lich-su' },
         { name: 'Cổ Trang', slug: 'co-trang' },
-        { name: 'Kinh Dị', slug: 'kinh-di' },
-        { name: 'Phim 18+', slug: 'phim-18' },
-        { name: 'Tâm Lý', slug: 'tam-ly' }
+        { name: 'Kinh Dị', slug: 'kinh-di' }
     ]);
 }
 
-// ---> NÂNG CẤP BỘ LỌC ĐỂ HIỆN MENU NHƯ IMAGE_11.PNG <---
-function getFilterConfig() {
-    var primaryCategories = [
-        { name: 'Tất cả Thể loại', slug: '' }, // Tùy chọn mặc định
-        { name: 'Hành Động', slug: 'hanh-dong' },
-        { name: 'Miền Tây', slug: 'mien-tay' },
-        { name: 'Trẻ Em', slug: 'tre-em' },
-        { name: 'Lịch Sử', slug: 'lich-su' },
-        { name: 'Cổ Trang', slug: 'co-trang' },
-        { name: 'Kinh Dị', slug: 'kinh-di' },
-        { name: 'Phim 18+', slug: 'phim-18' },
-        { name: 'Tâm Lý', slug: 'tam-ly' }
-    ];
-
-    return JSON.stringify({
-        // Tạm thời Hardcode sort để menu hiện ra, Web HTML khó sort động
-        sort: [
-            { name: 'Thời gian cập nhật', value: 'modified.time' },
-            { name: 'Năm phát hành', value: 'year' },
-            { name: 'Theo ID', value: '_id' }
-        ],
-        categories: primaryCategories // Hiển thị danh mục khớp Primary Categories
-    });
-}
-
 // =============================================================================
-// 2. URL GENERATION (TẠO LINK TRUY CẬP)
+// 2. URL GENERATION (XỬ LÝ LINK TỪ BỘ LỌC)
 // =============================================================================
-// ---> NÂNG CẤP HÀM NÀY ĐỂ XỬ LÝ DỮ LIỆU TỪ BỘ LỌC <---
 function getUrlList(slug, filtersJson) {
     try {
         var filters = JSON.parse(filtersJson || "{}");
         var page = filters.page || 1;
-        
-        // Slug mặc định là slug từ Home Section (ví dụ: phim-moi, phim-bo)
         var finalSlug = slug;
-        
-        // Nếu người dùng chọn thể loại trong Bộ Lọc, ta ưu tiên dùng nó
+
+        // Nếu người dùng chọn bộ lọc, thay đổi link tương ứng
         if (filters.category && filters.category !== "") {
             finalSlug = filters.category;
+        } else if (filters.country && filters.country !== "") {
+            finalSlug = "country/" + filters.country;
         }
 
         return "https://bluphim.me/" + finalSlug + "?page=" + page;
@@ -102,7 +92,6 @@ function getUrlSearch(keyword, filtersJson) {
 
 function getUrlDetail(slug) {
     if (slug.indexOf('http') === 0) return slug;
-    // Cắt dấu gạch chéo dư thừa ở cuối một cách an toàn
     slug = slug.replace(/\/+$/, ''); 
     return "https://bluphim.me/" + slug + "/"; 
 }
@@ -112,7 +101,7 @@ function getUrlCountries() { return ""; }
 function getUrlYears() { return ""; }
 
 // =============================================================================
-// 3. PARSERS (BÓC TÁCH DỮ LIỆU HTML)
+// 3. PARSERS (BÓC TÁCH DỮ LIỆU)
 // =============================================================================
 function parseListResponse(html) {
     try {
@@ -126,7 +115,6 @@ function parseListResponse(html) {
             var linkMatch = block.match(/<a href="([^"]+)"/);
             var url = linkMatch ? linkMatch[1] : "";
             
-            // Tách ID an toàn không dùng Regex phức tạp
             var id = url;
             if (url.indexOf('bluphim.me/') > -1) {
                 id = url.split('bluphim.me/')[1].replace(/\/+$/, '');
@@ -152,7 +140,7 @@ function parseListResponse(html) {
                     id: id,
                     title: title,
                     posterUrl: posterUrl,
-                    backdropUrl: posterUrl,
+                    backdropUrl: posterUrl, // Banner to sẽ lấy ảnh này
                     year: 0,
                     quality: quality,
                     episode_current: episode_current,
@@ -174,36 +162,36 @@ function parseSearchResponse(html) {
     return parseListResponse(html);
 }
 
-// ---> NÂNG CẤP DỮ LIỆU ĐỂ CLEAN NOIDUNG PHIM NHƯ IMAGE_10.PNG <---
 function parseMovieDetail(html) {
     try {
         var id = "unknown";
-        var urlMatch = html.match(/<meta property="og:url" content="([^"]+)"/i) || html.match(/<link rel="canonical" href="([^"]+)"/i);
-        
+        var urlMatch = html.match(/<meta property="og:url" content="([^"]+)"/i);
         if (urlMatch && urlMatch[1]) {
             if (urlMatch[1].indexOf('bluphim.me/') > -1) {
                 id = urlMatch[1].split('bluphim.me/')[1].replace(/\/+$/, '');
             }
         }
 
-        var titleMatch = html.match(/<h1 class="movie-title-detail">([^<]+)<\/h1>/);
-        var title = titleMatch ? titleMatch[1].trim() : "N/A";
+        // MOI TÊN PHIM VÀ NỘI DUNG TỪ THẺ META (100% CHÍNH XÁC VÀ SẠCH)
+        var titleMatch = html.match(/<meta property="og:title" content="([^"]+)"/i);
+        var title = titleMatch ? titleMatch[1].replace("Xem phim", "").replace("vietsub", "").trim() : "N/A";
 
-        var posterMatch = html.match(/class="movie-box-img"[\s\S]*?src="([^"]+)"/);
+        var posterMatch = html.match(/<meta property="og:image" content="([^"]+)"/i);
         var posterUrl = posterMatch ? posterMatch[1] : "";
 
-        // BÓC mô tả và clean tag rác
-        var descMatch = html.match(/content-detail">([\s\S]*?)<div class="hidden">/);
-        var description = descMatch ? descMatch[1].replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim() : "";
+        // Đây là "Chén thánh" để hiện nội dung phim
+        var descMatch = html.match(/<meta property="og:description" content="([^"]+)"/i);
+        var description = descMatch ? descMatch[1].trim() : "Đang cập nhật nội dung...";
         
-        // Clean Description nếu có những đoạn text kỳ lạ như #text
-        description = description.split('\n').map(function(line) { return line.trim(); }).filter(function(line) { return line !== "#text"; }).join("\n");
-
         var catMatch = html.match(/Thể loại:[\s\S]*?<td>([\s\S]*?)<\/td>/);
         var category = catMatch ? catMatch[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() : "";
 
         var castMatch = html.match(/Diễn viên:[\s\S]*?<td>([\s\S]*?)<\/td>/);
         var casts = castMatch ? castMatch[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() : "";
+
+        // TÌM NĂM PHÁT HÀNH
+        var yearMatch = html.match(/>(20\d{2})<\/a>/);
+        var year = yearMatch ? parseInt(yearMatch[1]) : 0;
 
         var qualityMatch = html.match(/class="icon-play"><\/i>\s*<span>([^<]+)<\/span>/i);
         var quality = qualityMatch ? qualityMatch[1].trim() : "HD";
@@ -264,6 +252,7 @@ function parseMovieDetail(html) {
             description: description,
             category: category,
             casts: casts,
+            year: year,
             quality: quality,
             servers: servers 
         });
