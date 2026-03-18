@@ -3,7 +3,7 @@
 // =============================================================================
 function getManifest() {
     return JSON.stringify({
-        "id": "ophim_api", // Chú ý: Hãy chắc chắn id này giống hệt trong plugins.json
+        "id": "ophim_api", 
         "name": "OPhim",
         "version": "1.0.1",
         "baseUrl": "https://ophim1.com",
@@ -55,19 +55,17 @@ function getUrlList(slug, filtersJson) {
         var page = filters.page || 1;
         var limit = 24;
         
-        // Xác định đường dẫn gốc
         var listSlugs = ['phim-moi-cap-nhat', 'phim-bo', 'phim-le', 'tv-shows', 'hoat-hinh', 'phim-chieu-rap', 'phim-vietsub', 'phim-thuyet-minh', 'phim-long-tieng'];
         var baseUrl = "https://ophim1.com/v1/api/";
         
         if (listSlugs.indexOf(slug) > -1) {
             baseUrl += "danh-sach/" + slug;
         } else {
-            baseUrl += "the-loai/" + slug; // Dự phòng nếu người dùng bấm từ Menu Thể Loại
+            baseUrl += "the-loai/" + slug; 
         }
 
         baseUrl += "?page=" + page + "&limit=" + limit;
 
-        // Bơm các tham số bộ lọc theo tài liệu API V1
         if (filters.sort) baseUrl += "&sort_field=" + filters.sort + "&sort_type=desc";
         if (filters.category) baseUrl += "&category=" + filters.category;
         if (filters.country) baseUrl += "&country=" + filters.country;
@@ -89,10 +87,9 @@ function getUrlDetail(slug) {
     return "https://ophim1.com/v1/api/phim/" + slug;
 }
 
-// Lấy danh sách Thể loại, Quốc gia, Năm trực tiếp từ máy chủ OPhim
 function getUrlCategories() { return "https://ophim1.com/v1/api/the-loai"; }
 function getUrlCountries() { return "https://ophim1.com/v1/api/quoc-gia"; }
-function getUrlYears() { return "local://years"; } // Trả mảng năm cục bộ cho an toàn
+function getUrlYears() { return "local://years"; } 
 
 // =============================================================================
 // 3. PARSERS (BÓC TÁCH DỮ LIỆU)
@@ -154,14 +151,13 @@ function parseMovieDetail(apiResponseJson) {
         var episodes = response.data.item.episodes || [];
         var domainImage = response.data.APP_DOMAIN_CDN_IMAGE || "https://img.ophim.live/uploads/movies/";
 
-        // 1. Phân loại Danh sách Tập phim & Server
         var servers = [];
         episodes.forEach(function(server) {
             var serverEpisodes = [];
             if (server.server_data) {
                 server.server_data.forEach(function(ep) {
                     serverEpisodes.push({
-                        id: ep.link_m3u8 || ep.link_embed, // Gài link M3U8 vào ID để App gọi Play
+                        id: ep.link_m3u8 || ep.link_embed, 
                         name: ep.name,
                         slug: ep.slug
                     });
@@ -172,7 +168,6 @@ function parseMovieDetail(apiResponseJson) {
             }
         });
 
-        // 2. Bóc thông tin phụ (Thể loại, Đạo diễn, Diễn viên...)
         var categories = (movie.category || []).map(function(c) { return c.name; }).join(", ");
         var countries = (movie.country || []).map(function(c) { return c.name; }).join(", ");
         var directors = (movie.director || []).join(", ");
@@ -191,7 +186,7 @@ function parseMovieDetail(apiResponseJson) {
             originName: movie.origin_name || "",
             posterUrl: getPosterUrl(movie.poster_url, domainImage),
             backdropUrl: getPosterUrl(movie.thumb_url, domainImage),
-            description: (movie.content || "").replace(/<[^>]*>/g, ""), // Dọn sạch mã HTML
+            description: (movie.content || "").replace(/<[^>]*>/g, ""), 
             year: movie.year || 0,
             rating: ratingValue,
             quality: movie.quality || "HD",
@@ -208,10 +203,9 @@ function parseMovieDetail(apiResponseJson) {
     }
 }
 
-// Hàm này KHÔNG ĐƯỢC gọi lại API nữa, vì link M3U8 đã có sẵn ở trong ID.
 function parseDetailResponse(apiResponseJson) {
     return JSON.stringify({
-        url: "", // Để trống, App sẽ tự động dùng cái link M3U8 ở trên
+        url: "", 
         headers: { 
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "Origin": "https://ophim1.com/",
@@ -221,7 +215,6 @@ function parseDetailResponse(apiResponseJson) {
     });
 }
 
-// Bóc tách Menu Bộ lọc từ Server
 function parseCategoriesResponse(apiResponseJson) {
     try {
         var response = JSON.parse(apiResponseJson);
