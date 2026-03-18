@@ -5,7 +5,7 @@
             "id": "bluphim_me_v1",
             "name": "BluPhim",
             "version": "1.0.0",
-            "scriptUrl": "https://github.com/namanhauto/pluginvax/blob/main/bluphim_plugin.js", 
+            "scriptUrl": "https://raw.githubusercontent.com/namanhauto/pluginvax/refs/heads/main/bluphim_plugin.js", 
             "iconUrl": "https://bluphim.me/favicon.ico"
         }
     ]
