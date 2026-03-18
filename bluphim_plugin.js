@@ -179,4 +179,92 @@ function parseMovieDetail(html) {
             serverBlocks.shift(); 
             for (var i = 0; i < serverBlocks.length; i++) {
                 var block = serverBlocks[i];
-                var nameMatch = block.match(/>
+                var nameMatch = block.match(/>\s*<h3>([\s\S]*?)<\/h3>/);
+                var serverName = nameMatch ? nameMatch[1].trim() : "Server " + (i+1);
+
+                var episodes = [];
+                var epRegex = /<a href="([^"]+)"[^>]*>[\s\S]*?<div class="episode-number">([\s\S]*?)<\/div>/g;
+                var epMatch;
+                
+                while ((epMatch = epRegex.exec(block)) !== null) {
+                    var fullUrl = epMatch[1];
+                    var epSlugMatch = fullUrl.match(/bluphim\.me\/(.+)$/);
+                    var epSlug = epSlugMatch ? epSlugMatch[1].replace(/\/$/, '') : fullUrl;
+
+                    episodes.push({
+                        id: epSlug, 
+                        name: "Tập " + epMatch[2].trim(),
+                        slug: epSlug 
+                    });
+                }
+
+                if (episodes.length > 0) {
+                    servers.push({ name: serverName, episodes: episodes });
+                }
+            }
+        } else {
+            // TÌM NÚT "XEM PHIM" CHO PHIM LẺ
+            var watchMatch = html.match(/<a href="([^"]+)" class="btn-watch-movie">/i);
+            if (watchMatch) {
+                var singleUrl = watchMatch[1];
+                var singleSlugMatch = singleUrl.match(/bluphim\.me\/(.+)$/);
+                var singleSlug = singleSlugMatch ? singleSlugMatch[1].replace(/\/$/, '') : singleUrl;
+                
+                servers.push({
+                    name: "Vietsub",
+                    episodes: [{
+                        id: singleSlug,
+                        name: "Full",
+                        slug: singleSlug
+                    }]
+                });
+            }
+        }
+
+        return JSON.stringify({
+            id: id, 
+            title: title,
+            posterUrl: posterUrl,
+            backdropUrl: posterUrl,
+            description: description,
+            category: category,
+            casts: casts,
+            quality: quality,
+            servers: servers 
+        });
+    } catch (error) { 
+        return JSON.stringify({ servers: [] }); 
+    }
+}
+
+function parseDetailResponse(html) {
+    try {
+        var url = "";
+        
+        var match = html.match(/all_sources\s*=\s*\[\s*["']([^"']+)["']/i);
+        if (match && match[1]) { 
+            url = match[1]; 
+        } else {
+            var iframeMatch = html.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+            if (iframeMatch) {
+                url = iframeMatch[1];
+            }
+        }
+
+        return JSON.stringify({
+            url: url,
+            headers: { 
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Referer": "https://bluphim.me/", 
+                "Origin": "https://bluphim.me/" 
+            },
+            subtitles: []
+        });
+    } catch (error) { 
+        return JSON.stringify({ url: "", headers: {}, subtitles: [] }); 
+    }
+}
+
+function parseCategoriesResponse(apiResponseJson) { return "[]"; }
+function parseCountriesResponse(apiResponseJson) { return "[]"; }
+function parseYearsResponse(apiResponseJson) { return "[]"; }
