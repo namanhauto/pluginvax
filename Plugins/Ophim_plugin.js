@@ -6,7 +6,7 @@ function getManifest() {
         "id": "ophim_api",
         "name": "OPhim",
         "version": "1.0.1",
-        "baseUrl": "https://ophim17.cc",
+        "baseUrl": "https://ophim1.com",
         "iconUrl": "https://raw.githubusercontent.com/namanhauto/pluginvax/main/Plugins/Ophim_logo.png", // Thay logo cho chuẩn
         "isEnabled": true,
         "type": "MOVIE",
