@@ -5,7 +5,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "bluphim_me",       
         "name": "BluPhim",           
-        "version": "1.0.6",          
+        "version": "1.0.7",          
         "baseUrl": "https://bluphim.me",
         "iconUrl": "https://bluphim.me/favicon.ico", 
         "isEnabled": true,
@@ -17,8 +17,9 @@ function getManifest() {
 
 function getHomeSections() {
     return JSON.stringify([
-        // Đổi type thành 'Banner' hy vọng App VAAPP sẽ kích hoạt banner to
-        { slug: 'phim-moi', title: '🔥 Phim Mới Cập Nhật', type: 'Banner', path: 'danh-sach' },
+        // Hàng 1: Phim Mới (Grid) để hiện nhiều phim
+        { slug: 'phim-moi', title: 'Phim Mới Cập Nhật', type: 'Grid', path: 'danh-sach' },
+        // Các hàng tiếp theo đúng như thanh Menu của Web
         { slug: 'phim-bo', title: 'Phim Bộ', type: 'Horizontal', path: 'danh-sach' },
         { slug: 'phim-le', title: 'Phim Lẻ', type: 'Horizontal', path: 'danh-sach' },
         { slug: 'phim-chieu-rap', title: 'Phim Chiếu Rạp', type: 'Horizontal', path: 'danh-sach' },
@@ -26,17 +27,23 @@ function getHomeSections() {
     ]);
 }
 
-// KHAI BÁO BỘ LỌC ĐẦY ĐỦ HƠN (THÊM QUỐC GIA)
+// BỘ LỌC ĐẦY ĐỦ 100% Y NHƯ ẢNH WEB
 function getFilterConfig() {
     return JSON.stringify({
         categories: [
-            { name: 'Hành Động', slug: 'hanh-dong' },
-            { name: 'Miền Tây', slug: 'mien-tay' },
-            { name: 'Trẻ Em', slug: 'tre-em' },
-            { name: 'Lịch Sử', slug: 'lich-su' },
+            { name: 'Bí Ẩn', slug: 'bi-an' },
+            { name: 'Chính Kịch', slug: 'chinh-kich' },
             { name: 'Cổ Trang', slug: 'co-trang' },
+            { name: 'Gia Đình', slug: 'gia-dinh' },
+            { name: 'Hài Hước', slug: 'hai-huoc' },
+            { name: 'Hành Động', slug: 'hanh-dong' },
+            { name: 'Hình Sự', slug: 'hinh-su' },
+            { name: 'Khoa Học', slug: 'khoa-hoc' },
             { name: 'Kinh Dị', slug: 'kinh-di' },
-            { name: 'Tâm Lý', slug: 'tam-ly' }
+            { name: 'Phiêu Lưu', slug: 'phieu-luu' },
+            { name: 'Tâm Lý', slug: 'tam-ly' },
+            { name: 'Tình Cảm', slug: 'tinh-cam' },
+            { name: 'Viễn Tưởng', slug: 'vien-tuong' }
         ],
         countries: [
             { name: 'Âu Mỹ', slug: 'au-my' },
@@ -49,9 +56,12 @@ function getFilterConfig() {
 function getPrimaryCategories() {
     return JSON.stringify([
         { name: 'Hành Động', slug: 'hanh-dong' },
-        { name: 'Miền Tây', slug: 'mien-tay' },
+        { name: 'Tình Cảm', slug: 'tinh-cam' },
         { name: 'Cổ Trang', slug: 'co-trang' },
-        { name: 'Kinh Dị', slug: 'kinh-di' }
+        { name: 'Kinh Dị', slug: 'kinh-di' },
+        { name: 'Hài Hước', slug: 'hai-huoc' },
+        { name: 'Hình Sự', slug: 'hinh-su' },
+        { name: 'Phiêu Lưu', slug: 'phieu-luu' }
     ]);
 }
 
@@ -64,7 +74,7 @@ function getUrlList(slug, filtersJson) {
         var page = filters.page || 1;
         var finalSlug = slug;
 
-        // Nếu người dùng chọn bộ lọc, thay đổi link tương ứng
+        // Ưu tiên load link theo danh mục hoặc quốc gia mà user chọn trong bộ lọc
         if (filters.category && filters.category !== "") {
             finalSlug = filters.category;
         } else if (filters.country && filters.country !== "") {
@@ -140,7 +150,7 @@ function parseListResponse(html) {
                     id: id,
                     title: title,
                     posterUrl: posterUrl,
-                    backdropUrl: posterUrl, // Banner to sẽ lấy ảnh này
+                    backdropUrl: posterUrl,
                     year: 0,
                     quality: quality,
                     episode_current: episode_current,
@@ -165,21 +175,20 @@ function parseSearchResponse(html) {
 function parseMovieDetail(html) {
     try {
         var id = "unknown";
-        var urlMatch = html.match(/<meta property="og:url" content="([^"]+)"/i);
+        var urlMatch = html.match(/<meta property="og:url" content="([^"]+)"/i) || html.match(/<link rel="canonical" href="([^"]+)"/i);
+        
         if (urlMatch && urlMatch[1]) {
             if (urlMatch[1].indexOf('bluphim.me/') > -1) {
                 id = urlMatch[1].split('bluphim.me/')[1].replace(/\/+$/, '');
             }
         }
 
-        // MOI TÊN PHIM VÀ NỘI DUNG TỪ THẺ META (100% CHÍNH XÁC VÀ SẠCH)
         var titleMatch = html.match(/<meta property="og:title" content="([^"]+)"/i);
         var title = titleMatch ? titleMatch[1].replace("Xem phim", "").replace("vietsub", "").trim() : "N/A";
 
         var posterMatch = html.match(/<meta property="og:image" content="([^"]+)"/i);
         var posterUrl = posterMatch ? posterMatch[1] : "";
 
-        // Đây là "Chén thánh" để hiện nội dung phim
         var descMatch = html.match(/<meta property="og:description" content="([^"]+)"/i);
         var description = descMatch ? descMatch[1].trim() : "Đang cập nhật nội dung...";
         
@@ -189,7 +198,6 @@ function parseMovieDetail(html) {
         var castMatch = html.match(/Diễn viên:[\s\S]*?<td>([\s\S]*?)<\/td>/);
         var casts = castMatch ? castMatch[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() : "";
 
-        // TÌM NĂM PHÁT HÀNH
         var yearMatch = html.match(/>(20\d{2})<\/a>/);
         var year = yearMatch ? parseInt(yearMatch[1]) : 0;
 
