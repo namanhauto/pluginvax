@@ -7,16 +7,36 @@ function getManifest() {
         "iconUrl": "https://bluphim.me/favicon.ico", 
         "isEnabled": true,
         "isAdult": false,            
-        "type": "MOVIE"
+        "type": "MOVIE",
+        "layoutType": "VERTICAL"
     });
 }
 
-// App sẽ truyền slug (ví dụ: 'phim-bo' hoặc 'hanh-dong') vào đây để lấy link
+function getHomeSections() {
+    return JSON.stringify([
+        { slug: 'phim-moi', title: 'Phim Mới Cập Nhật', type: 'Grid', path: 'danh-sach' },
+        { slug: 'phim-bo', title: 'Phim Bộ', type: 'Horizontal', path: 'danh-sach' },
+        { slug: 'phim-le', title: 'Phim Lẻ', type: 'Horizontal', path: 'danh-sach' },
+        { slug: 'phim-chieu-rap', title: 'Phim Chiếu Rạp', type: 'Horizontal', path: 'danh-sach' },
+        { slug: 'hoat-hinh', title: 'Hoạt Hình', type: 'Horizontal', path: 'danh-sach' }
+    ]);
+}
+
+function getPrimaryCategories() {
+    return JSON.stringify([
+        { name: 'Hành Động', slug: 'hanh-dong' },
+        { name: 'Cổ Trang', slug: 'co-trang' },
+        { name: 'Tình Cảm', slug: 'tinh-cam' },
+        { name: 'Kinh Dị', slug: 'kinh-di' },
+        { name: 'Hài Hước', slug: 'hai-huoc' },
+        { name: 'Phiêu Lưu', slug: 'phieu-luu' },
+        { name: 'Tâm Lý', slug: 'tam-ly' }
+    ]);
+}
+
 function getUrlList(slug, filtersJson) {
     var filters = JSON.parse(filtersJson || "{}");
     var page = filters.page || 1;
-    
-    // Cấu trúc link của Bluphim rất đơn giản: https://bluphim.me/slug?page=...
     return "https://bluphim.me/" + slug + "?page=" + page;
 }
 
@@ -119,62 +139,27 @@ function parseMovieDetail(html) {
 }
 
 function parseDetailResponse(html) {
-    try {
-        var url = "";
-        
-        // Nâng cấp Regex: Chấp nhận cả nháy đơn ' và nháy kép ", loại bỏ khoảng trắng thừa
-        var match = html.match(/all_sources\s*=\s*\[\s*["']([^"']+)["']/i);
-        if (match && match[1]) { 
-            url = match[1]; 
-        } else {
-            // Phương án dự phòng (Fallback): Nếu giấu m3u8, ta tìm link Iframe
-            var iframeMatch = html.match(/<iframe[^>]+src=["']([^"']+)["']/i);
-            if (iframeMatch) {
-                url = iframeMatch[1];
-            }
+    var url = "";
+    
+    // Nâng cấp Regex: Bắt chính xác mảng all_sources
+    var match = html.match(/all_sources\s*=\s*\[\s*["']([^"']+)["']/i);
+    if (match && match[1]) { 
+        url = match[1]; 
+    } else {
+        // Fallback: Tìm link iframe dự phòng nếu web giấu m3u8
+        var iframeMatch = html.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+        if (iframeMatch) {
+            url = iframeMatch[1];
         }
-
-        return JSON.stringify({
-            "url": url,
-            "headers": { 
-                // Giả dạng làm trình duyệt Chrome trên máy tính Windows
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Referer": "https://bluphim.me/", 
-                "Origin": "https://bluphim.me/" 
-            },
-            "subtitles": []
-        });
-    } catch (e) {
-        return JSON.stringify({
-            "url": "",
-            "headers": {},
-            "subtitles": []
-        });
     }
-}
-}
-// ==========================================
-// PHẦN 6: CẤU HÌNH GIAO DIỆN (TRANG CHỦ & DANH MỤC)
-// ==========================================
 
-function getHomeSections() {
-    return JSON.stringify([
-        { slug: 'phim-moi', title: 'Phim Mới Cập Nhật', type: 'Grid', path: 'danh-sach' },
-        { slug: 'phim-bo', title: 'Phim Bộ', type: 'Horizontal', path: 'danh-sach' },
-        { slug: 'phim-le', title: 'Phim Lẻ', type: 'Horizontal', path: 'danh-sach' },
-        { slug: 'phim-chieu-rap', title: 'Phim Chiếu Rạp', type: 'Horizontal', path: 'danh-sach' },
-        { slug: 'hoat-hinh', title: 'Hoạt Hình', type: 'Horizontal', path: 'danh-sach' }
-    ]);
-}
-
-function getPrimaryCategories() {
-    return JSON.stringify([
-        { name: 'Hành Động', slug: 'hanh-dong' },
-        { name: 'Cổ Trang', slug: 'co-trang' },
-        { name: 'Tình Cảm', slug: 'tinh-cam' },
-        { name: 'Kinh Dị', slug: 'kinh-di' },
-        { name: 'Hài Hước', slug: 'hai-huoc' },
-        { name: 'Phiêu Lưu', slug: 'phieu-luu' },
-        { name: 'Tâm Lý', slug: 'tam-ly' }
-    ]);
+    return JSON.stringify({
+        "url": url,
+        "headers": { 
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": "https://bluphim.me/", 
+            "Origin": "https://bluphim.me/" 
+        },
+        "subtitles": []
+    });
 }
