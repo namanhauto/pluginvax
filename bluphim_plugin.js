@@ -38,7 +38,6 @@ function getPrimaryCategories() {
 }
 
 function getFilterConfig() {
-    // Chỉ cần khai báo sort ở đây, Categories và Countries App sẽ tự lấy qua hàm Parse bên dưới
     return JSON.stringify({
         sort: [
             { name: 'Thời gian cập nhật', value: 'modified.time' },
@@ -61,7 +60,6 @@ function getUrlList(slug, filtersJson) {
         } else if (filters.country && filters.country !== "") {
             finalSlug = "country/" + filters.country;
         }
-        // Lưu ý: Bluphim không có chức năng lọc theo Năm trên web nên ta tạm bỏ qua filters.year
 
         return "https://bluphim.me/" + finalSlug + "?page=" + page;
     } catch (e) {
@@ -104,7 +102,6 @@ function parseListResponse(html) {
 
         for (var i = 0; i < blocks.length; i++) {
             var block = blocks[i];
-            
             var linkMatch = block.match(/<a href="([^"]+)"/);
             var url = linkMatch ? linkMatch[1] : "";
             
@@ -280,7 +277,7 @@ function parseDetailResponse(html) {
     }
 }
 
-// ---> NHỒI DỮ LIỆU BỘ LỌC TRỰC TIẾP VÀO ĐÂY <---
+// ---> CÁC HÀM NÀY ĐÃ ĐƯỢC NHỒI DỮ LIỆU CHUẨN XÁC <---
 function parseCategoriesResponse(html) {
     return JSON.stringify([
         { name: 'Bí Ẩn', slug: 'bi-an', value: 'bi-an' },
