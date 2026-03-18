@@ -8,8 +8,7 @@ function getManifest() {
         "version": "1.0.9",          
         "baseUrl": "https://bluphim.me",
         "iconUrl": "https://bluphim.me/favicon.ico", 
-        "isEnabled": true,
-        "isAdult": false,            
+        "isEnabled": true,         
         "type": "MOVIE",
         "layoutType": "VERTICAL"
     });
