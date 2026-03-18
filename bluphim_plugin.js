@@ -5,7 +5,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "bluphim_me",       
         "name": "BluPhim",           
-        "version": "1.0.8",          
+        "version": "1.0.9",          
         "baseUrl": "https://bluphim.me",
         "iconUrl": "https://bluphim.me/favicon.ico", 
         "isEnabled": true,
@@ -25,40 +25,6 @@ function getHomeSections() {
     ]);
 }
 
-// KHAI BÁO BỘ LỌC ĐẦY ĐỦ (ĐÃ SỬA LỖI MẤT MENU)
-function getFilterConfig() {
-    return JSON.stringify({
-        // Bắt buộc phải có 'sort' thì App mới cho hiện nút Bộ Lọc
-        sort: [
-            { name: 'Thời gian cập nhật', value: 'modified.time' },
-            { name: 'Năm phát hành', value: 'year' }
-        ],
-        categories: [
-            { name: 'Bí Ẩn', slug: 'bi-an', value: 'bi-an' },
-            { name: 'Chính Kịch', slug: 'chinh-kich', value: 'chinh-kich' },
-            { name: 'Cổ Trang', slug: 'co-trang', value: 'co-trang' },
-            { name: 'Gia Đình', slug: 'gia-dinh', value: 'gia-dinh' },
-            { name: 'Hài Hước', slug: 'hai-huoc', value: 'hai-huoc' },
-            { name: 'Hành Động', slug: 'hanh-dong', value: 'hanh-dong' },
-            { name: 'Hình Sự', slug: 'hinh-su', value: 'hinh-su' },
-            { name: 'Khoa Học', slug: 'khoa-hoc', value: 'khoa-hoc' },
-            { name: 'Kinh Dị', slug: 'kinh-di', value: 'kinh-di' },
-            { name: 'Phiêu Lưu', slug: 'phieu-luu', value: 'phieu-luu' },
-            { name: 'Tâm Lý', slug: 'tam-ly', value: 'tam-ly' },
-            { name: 'Tình Cảm', slug: 'tinh-cam', value: 'tinh-cam' },
-            { name: 'Viễn Tưởng', slug: 'vien-tuong', value: 'vien-tuong' }
-        ],
-        countries: [
-            { name: 'Âu Mỹ', slug: 'au-my', value: 'au-my' },
-            { name: 'Hàn Quốc', slug: 'han-quoc', value: 'han-quoc' },
-            { name: 'Trung Quốc', slug: 'trung-quoc', value: 'trung-quoc' },
-            { name: 'Nhật Bản', slug: 'nhat-ban', value: 'nhat-ban' },
-            { name: 'Thái Lan', slug: 'thai-lan', value: 'thai-lan' },
-            { name: 'Việt Nam', slug: 'viet-nam', value: 'viet-nam' }
-        ]
-    });
-}
-
 function getPrimaryCategories() {
     return JSON.stringify([
         { name: 'Hành Động', slug: 'hanh-dong' },
@@ -71,8 +37,18 @@ function getPrimaryCategories() {
     ]);
 }
 
+function getFilterConfig() {
+    // Chỉ cần khai báo sort ở đây, Categories và Countries App sẽ tự lấy qua hàm Parse bên dưới
+    return JSON.stringify({
+        sort: [
+            { name: 'Thời gian cập nhật', value: 'modified.time' },
+            { name: 'Năm phát hành', value: 'year' }
+        ]
+    });
+}
+
 // =============================================================================
-// 2. URL GENERATION (XỬ LÝ LINK TỪ BỘ LỌC)
+// 2. URL GENERATION
 // =============================================================================
 function getUrlList(slug, filtersJson) {
     try {
@@ -85,6 +61,7 @@ function getUrlList(slug, filtersJson) {
         } else if (filters.country && filters.country !== "") {
             finalSlug = "country/" + filters.country;
         }
+        // Lưu ý: Bluphim không có chức năng lọc theo Năm trên web nên ta tạm bỏ qua filters.year
 
         return "https://bluphim.me/" + finalSlug + "?page=" + page;
     } catch (e) {
@@ -111,9 +88,10 @@ function getUrlDetail(slug) {
     return "https://bluphim.me/" + slug + "/"; 
 }
 
-function getUrlCategories() { return ""; }
-function getUrlCountries() { return ""; }
-function getUrlYears() { return ""; }
+// ---> CUNG CẤP LINK MỒI ĐỂ APP KÍCH HOẠT NÚT BỘ LỌC <---
+function getUrlCategories() { return "https://bluphim.me/"; }
+function getUrlCountries() { return "https://bluphim.me/"; }
+function getUrlYears() { return "https://bluphim.me/"; }
 
 // =============================================================================
 // 3. PARSERS (BÓC TÁCH DỮ LIỆU)
@@ -302,6 +280,40 @@ function parseDetailResponse(html) {
     }
 }
 
-function parseCategoriesResponse(apiResponseJson) { return "[]"; }
-function parseCountriesResponse(apiResponseJson) { return "[]"; }
-function parseYearsResponse(apiResponseJson) { return "[]"; }
+// ---> NHỒI DỮ LIỆU BỘ LỌC TRỰC TIẾP VÀO ĐÂY <---
+function parseCategoriesResponse(html) {
+    return JSON.stringify([
+        { name: 'Bí Ẩn', slug: 'bi-an', value: 'bi-an' },
+        { name: 'Chính Kịch', slug: 'chinh-kich', value: 'chinh-kich' },
+        { name: 'Cổ Trang', slug: 'co-trang', value: 'co-trang' },
+        { name: 'Gia Đình', slug: 'gia-dinh', value: 'gia-dinh' },
+        { name: 'Hài Hước', slug: 'hai-huoc', value: 'hai-huoc' },
+        { name: 'Hành Động', slug: 'hanh-dong', value: 'hanh-dong' },
+        { name: 'Hình Sự', slug: 'hinh-su', value: 'hinh-su' },
+        { name: 'Khoa Học', slug: 'khoa-hoc', value: 'khoa-hoc' },
+        { name: 'Kinh Dị', slug: 'kinh-di', value: 'kinh-di' },
+        { name: 'Phiêu Lưu', slug: 'phieu-luu', value: 'phieu-luu' },
+        { name: 'Tâm Lý', slug: 'tam-ly', value: 'tam-ly' },
+        { name: 'Tình Cảm', slug: 'tinh-cam', value: 'tinh-cam' },
+        { name: 'Viễn Tưởng', slug: 'vien-tuong', value: 'vien-tuong' }
+    ]);
+}
+
+function parseCountriesResponse(html) {
+    return JSON.stringify([
+        { name: 'Âu Mỹ', slug: 'au-my', value: 'au-my' },
+        { name: 'Hàn Quốc', slug: 'han-quoc', value: 'han-quoc' },
+        { name: 'Trung Quốc', slug: 'trung-quoc', value: 'trung-quoc' },
+        { name: 'Nhật Bản', slug: 'nhat-ban', value: 'nhat-ban' },
+        { name: 'Thái Lan', slug: 'thai-lan', value: 'thai-lan' },
+        { name: 'Việt Nam', slug: 'viet-nam', value: 'viet-nam' }
+    ]);
+}
+
+function parseYearsResponse(html) {
+    var years = [];
+    for (var i = 2026; i >= 2000; i--) {
+        years.push({ name: i.toString(), slug: i.toString(), value: i.toString() });
+    }
+    return JSON.stringify(years);
+}
