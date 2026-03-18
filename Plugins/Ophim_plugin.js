@@ -1,5 +1,5 @@
 // =============================================================================
-// 1. CONFIGURATION & METADATA (OPhim API V1 CHUẨN)
+// 1. CONFIGURATION & METADATA (OPhim API V1)
 // =============================================================================
 function getManifest() {
     return JSON.stringify({
@@ -16,45 +16,37 @@ function getManifest() {
 
 function getHomeSections() {
     return JSON.stringify([
-        { slug: 'v1/api/home', title: '🏠 Phim Mới Cập Nhật', type: 'Banner', path: 'v1/api/home' },
-        { slug: 'v1/api/danh-sach/phim-bo', title: '📺 Phim Bộ', type: 'Horizontal', path: 'v1/api/danh-sach/phim-bo' },
-        { slug: 'v1/api/danh-sach/phim-le', title: '🎬 Phim Lẻ', type: 'Horizontal', path: 'v1/api/danh-sach/phim-le' },
-        { slug: 'v1/api/danh-sach/hoat-hinh', title: '🦄 Hoạt Hình', type: 'Horizontal', path: 'v1/api/danh-sach/hoat-hinh' }
+        // ĐÃ SỬA LỖI SLUG (Tuyệt đối không dùng dấu gạch chéo ở đây)
+        { slug: 'phim-moi', title: '🏠 Phim Mới Cập Nhật', type: 'Banner', path: 'danh-sach' },
+        { slug: 'phim-bo', title: '📺 Phim Bộ', type: 'Horizontal', path: 'danh-sach' },
+        { slug: 'phim-le', title: '🎬 Phim Lẻ', type: 'Horizontal', path: 'danh-sach' },
+        { slug: 'hoat-hinh', title: '🦄 Hoạt Hình', type: 'Horizontal', path: 'danh-sach' },
+        { slug: 'tv-shows', title: '🌟 TV Shows', type: 'Horizontal', path: 'danh-sach' }
     ]);
 }
 
 // =============================================================================
-// 2. HELPER: SỬA LỖI HÌNH ẢNH (CHUYỂN SANG IMG.PHIMAPI.COM)
-// =============================================================================
-function fixImageUrl(path) {
-    if (!path) return "";
-    if (path.indexOf('http') === 0) return path;
-    // API V1 của OPhim bắt buộc dùng host img.phimapi.com
-    var cleanPath = path.replace(/^\/+/, '');
-    return "https://img.phimapi.com/" + cleanPath; 
-}
-
-// =============================================================================
-// 3. URL GENERATION (BÁM SÁT ĐƯỜNG DẪN API V1)
+// 2. URL GENERATION (ĐỊNH TUYẾN THÔNG MINH)
 // =============================================================================
 function getUrlList(slug, filtersJson) {
     try {
         var filters = JSON.parse(filtersJson || "{}");
         var page = filters.page || 1;
         
-        // Nếu dùng bộ lọc
+        // Chạy Bộ lọc
         if (filters.category) return "https://ophim1.com/v1/api/the-loai/" + filters.category + "?page=" + page;
         if (filters.country) return "https://ophim1.com/v1/api/quoc-gia/" + filters.country + "?page=" + page;
         if (filters.year) return "https://ophim1.com/v1/api/nam-phat-hanh/" + filters.year + "?page=" + page;
 
-        // Xử lý slug từ Home Section
-        if (slug.indexOf('v1/api') === 0) {
-            return "https://ophim1.com/" + slug + (slug.indexOf('?') > -1 ? "&" : "?") + "page=" + page;
+        // Phim mới cập nhật phải dùng link riêng để Load More không bị lỗi
+        if (slug === 'phim-moi') {
+            return "https://ophim1.com/danh-sach/phim-moi-cap-nhat?page=" + page; 
         }
         
+        // Các danh sách khác (Phim bộ, Phim lẻ...) dùng chuẩn V1
         return "https://ophim1.com/v1/api/danh-sach/" + slug + "?page=" + page;
     } catch (e) {
-        return "https://ophim1.com/v1/api/home";
+        return "https://ophim1.com/danh-sach/phim-moi-cap-nhat";
     }
 }
 
@@ -63,42 +55,51 @@ function getUrlSearch(keyword, filtersJson) {
     return "https://ophim1.com/v1/api/tim-kiem?keyword=" + encodeURIComponent(keyword) + "&page=" + page;
 }
 
-function getUrlDetail(slug) {
-    return "https://ophim1.com/v1/api/phim/" + slug;
-}
-
+function getUrlDetail(slug) { return "https://ophim1.com/v1/api/phim/" + slug; }
 function getUrlCategories() { return "https://ophim1.com/v1/api/the-loai"; }
 function getUrlCountries() { return "https://ophim1.com/v1/api/quoc-gia"; }
 function getUrlYears() { return "https://ophim1.com/v1/api/nam-phat-hanh"; }
 
 // =============================================================================
-// 4. PARSERS (BÓC TÁCH DỮ LIỆU CHUẨN V1)
+// 3. PARSERS (BÓC TÁCH "BAO CÂN" MỌI LỖI TỪ API)
 // =============================================================================
 function parseListResponse(apiResponseJson) {
     try {
         var res = JSON.parse(apiResponseJson);
-        var items = [];
-        var rawData = res.data ? (res.data.items || []) : [];
+        var rawItems = [];
+        var pagination = { currentPage: 1, totalPages: 1 };
+        var domainImage = "https://img.phimapi.com/"; // Domain dự phòng
 
-        for (var i = 0; i < rawData.length; i++) {
-            var item = rawData[i];
-            items.push({
+        // Code bắt thông minh: Tự thích ứng với cấu trúc API V0 (Phim mới) và V1 (Danh sách)
+        if (res.data && res.data.items) {
+            rawItems = res.data.items;
+            pagination = (res.data.params && res.data.params.pagination) ? res.data.params.pagination : pagination;
+            if (res.data.APP_DOMAIN_CDN_IMAGE) domainImage = res.data.APP_DOMAIN_CDN_IMAGE + "/"; // Lấy server ảnh gốc của OPhim
+        } else if (res.items) {
+            rawItems = res.items;
+            pagination = res.pagination || pagination;
+            if (res.pathImage) domainImage = res.pathImage + "/";
+        }
+
+        var items = rawItems.map(function(item) {
+            // Fix triệt để lỗi ảnh vỡ
+            var poster = item.poster_url.indexOf('http') === 0 ? item.poster_url : domainImage + item.poster_url.replace(/^\/+/, '');
+            var thumb = item.thumb_url.indexOf('http') === 0 ? item.thumb_url : domainImage + item.thumb_url.replace(/^\/+/, '');
+            
+            return {
                 id: item.slug,
                 title: item.name,
-                posterUrl: fixImageUrl(item.poster_url),
-                backdropUrl: fixImageUrl(item.thumb_url),
+                posterUrl: poster,
+                backdropUrl: thumb,
                 year: item.year || 0,
                 quality: item.quality || "FHD",
                 episode_current: item.episode_current || "Full",
                 lang: item.lang || ""
-            });
-        }
-
-        return JSON.stringify({
-            items: items,
-            pagination: (res.data && res.data.params) ? res.data.params.pagination : { currentPage: 1, totalPages: 1 }
+            };
         });
-    } catch (e) { return JSON.stringify({ items: [], pagination: { currentPage: 1, totalPages: 1 } }); }
+
+        return JSON.stringify({ items: items, pagination: pagination });
+    } catch (e) { return JSON.stringify({ items: [] }); }
 }
 
 function parseSearchResponse(apiResponseJson) { return parseListResponse(apiResponseJson); }
@@ -106,9 +107,19 @@ function parseSearchResponse(apiResponseJson) { return parseListResponse(apiResp
 function parseMovieDetail(apiResponseJson) {
     try {
         var res = JSON.parse(apiResponseJson);
-        var movie = res.data.item;
-        
-        var servers = (movie.episodes || []).map(function(server) {
+        // Tương thích cả V0 và V1
+        var movie = res.status ? res.data.item : res.movie; 
+        if (!movie) return "null";
+
+        var domainImage = "https://img.phimapi.com/";
+        if (res.data && res.data.APP_DOMAIN_CDN_IMAGE) domainImage = res.data.APP_DOMAIN_CDN_IMAGE + "/";
+        else if (res.pathImage) domainImage = res.pathImage + "/";
+
+        var poster = movie.poster_url.indexOf('http') === 0 ? movie.poster_url : domainImage + movie.poster_url.replace(/^\/+/, '');
+        var thumb = movie.thumb_url.indexOf('http') === 0 ? movie.thumb_url : domainImage + movie.thumb_url.replace(/^\/+/, '');
+
+        var episodesRaw = res.status ? movie.episodes : res.episodes;
+        var servers = (episodesRaw || []).map(function(server) {
             return {
                 name: server.server_name,
                 episodes: server.server_data.map(function(ep) {
@@ -117,14 +128,15 @@ function parseMovieDetail(apiResponseJson) {
             };
         });
 
+        // Hỗ trợ App VAAPP vẽ ảnh diễn viên và điểm IMDb
         var tmdbId = (movie.tmdb && movie.tmdb.id) ? String(movie.tmdb.id) : "";
 
         return JSON.stringify({
             id: movie.slug,
             title: movie.name,
             originName: movie.origin_name,
-            posterUrl: fixImageUrl(movie.poster_url),
-            backdropUrl: fixImageUrl(movie.thumb_url),
+            posterUrl: poster,
+            backdropUrl: thumb,
             description: movie.content ? movie.content.replace(/<[^>]*>?/gm, '') : "",
             year: movie.year,
             quality: movie.quality || "FHD",
@@ -146,7 +158,7 @@ function parseDetailResponse(apiResponseJson) {
 function parseCategoriesResponse(apiResponseJson) {
     try {
         var res = JSON.parse(apiResponseJson);
-        var list = (res.data && res.data.items) ? res.data.items : [];
+        var list = (res.data && res.data.items) ? res.data.items : (res.items || []);
         return JSON.stringify(list.map(function(i) { return { name: i.name, slug: i.slug, value: i.slug }; }));
     } catch (e) { return "[]"; }
 }
@@ -156,7 +168,7 @@ function parseCountriesResponse(apiResponseJson) { return parseCategoriesRespons
 function parseYearsResponse(apiResponseJson) {
     try {
         var res = JSON.parse(apiResponseJson);
-        var list = (res.data && res.data.items) ? res.data.items : [];
+        var list = (res.data && res.data.items) ? res.data.items : (res.items || []);
         return JSON.stringify(list.map(function(i) { return { name: i.name, slug: i.name, value: i.name }; }));
     } catch (e) { return "[]"; }
 }
