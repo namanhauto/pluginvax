@@ -3,7 +3,6 @@
 // =============================================================================
 function getManifest() {
     return JSON.stringify({
-{
     "id": "bluphim_me_v1",  // Sửa lại thành blu (không có chữ e)
     "name": "BluPhim",      
         "version": "1.0.4",          
