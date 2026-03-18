@@ -1,16 +1,16 @@
 // =============================================================================
-// CONFIGURATION & METADATA
+// 1. CONFIGURATION & METADATA
 // =============================================================================
-
 function getManifest() {
     return JSON.stringify({
-        "id": "bluphim_me",
-        "name": "BluPhim",
-        "version": "1.0.1",
+        "id": "bluphim_me", 
+    "name": "BluPhim",
+        "version": "1.0.2",
         "baseUrl": "https://bluphim.me",
         "iconUrl": "https://bluphim.me/favicon.ico",
         "isEnabled": true,
-        "type": "MOVIE"
+        "type": "MOVIE",
+        "layoutType": "VERTICAL"
     });
 }
 
@@ -36,16 +36,11 @@ function getPrimaryCategories() {
     ]);
 }
 
-function getFilterConfig() {
-    return JSON.stringify({
-        sort: [] // Web HTML thường khó filter API nên tạm để trống
-    });
-}
+function getFilterConfig() { return JSON.stringify({ sort: [] }); }
 
 // =============================================================================
-// URL GENERATION
+// 2. URL GENERATION
 // =============================================================================
-
 function getUrlList(slug, filtersJson) {
     try {
         var filters = JSON.parse(filtersJson || "{}");
@@ -70,7 +65,6 @@ function getUrlSearch(keyword, filtersJson) {
 }
 
 function getUrlDetail(slug) {
-    // Chống lỗi đường dẫn
     if (slug.indexOf('http') === 0) return slug;
     slug = slug.replace(/^\/+|\/+$/g, ''); 
     return "https://bluphim.me/" + slug + "/"; 
@@ -81,9 +75,8 @@ function getUrlCountries() { return ""; }
 function getUrlYears() { return ""; }
 
 // =============================================================================
-// PARSERS
+// 3. PARSERS (BÓC TÁCH DỮ LIỆU)
 // =============================================================================
-
 function parseListResponse(html) {
     try {
         var items = []; 
@@ -95,7 +88,6 @@ function parseListResponse(html) {
             var linkMatch = block.match(/<a href="([^"]+)"/);
             var url = linkMatch ? linkMatch[1] : "";
             
-            // Xử lý ID siêu gọn để App mượt hơn
             var slugMatch = url.match(/bluphim\.me\/(.+)$/);
             var id = slugMatch ? slugMatch[1].replace(/\/$/, '') : url;
 
@@ -127,12 +119,7 @@ function parseListResponse(html) {
 
         return JSON.stringify({
             items: items,
-            pagination: {
-                currentPage: 1,
-                totalPages: 50,
-                totalItems: 1000,
-                itemsPerPage: 20
-            }
+            pagination: { currentPage: 1, totalPages: 50, totalItems: 1000, itemsPerPage: 20 }
         });
     } catch (error) {
         return JSON.stringify({ items: [], pagination: { currentPage: 1, totalPages: 1 } });
@@ -143,8 +130,17 @@ function parseSearchResponse(html) {
     return parseListResponse(html);
 }
 
+// ---> HÀM ĐÃ ĐƯỢC CHỮA BỆNH <---
 function parseMovieDetail(html) {
     try {
+        // 1. TÌM ID CHUẨN XÁC ĐỂ APP KHÔNG BỊ "HÓC XƯƠNG"
+        var id = "unknown";
+        var urlMatch = html.match(/<meta property="og:url" content="([^"]+)"/i) || html.match(/<link rel="canonical" href="([^"]+)"/i);
+        if (urlMatch && urlMatch[1]) {
+            var slugMatch = urlMatch[1].match(/bluphim\.me\/(.+)$/);
+            if (slugMatch) id = slugMatch[1].replace(/\/$/, '');
+        }
+
         var titleMatch = html.match(/<h1 class="movie-title-detail">([\s\S]*?)<\/h1>/);
         var title = titleMatch ? titleMatch[1].trim() : "N/A";
 
@@ -153,63 +149,73 @@ function parseMovieDetail(html) {
 
         var descMatch = html.match(/content-detail">([\s\S]*?)<div class="hidden">/);
         var description = descMatch ? descMatch[1].replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim() : "";
-        
-        var catMatch = html.match(/Thể loại:[\s\S]*?<td>([\s\S]*?)<\/td>/);
-        var category = catMatch ? catMatch[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() : "";
-
-        var castMatch = html.match(/Diễn viên:[\s\S]*?<td>([\s\S]*?)<\/td>/);
-        var casts = castMatch ? castMatch[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() : "";
 
         var servers = [];
         var serverBlocks = html.split('class="title_server"');
-        serverBlocks.shift(); 
+        
+        // NẾU CÓ NHIỀU TẬP (PHIM BỘ)
+        if (serverBlocks.length > 1) {
+            serverBlocks.shift(); 
+            for (var i = 0; i < serverBlocks.length; i++) {
+                var block = serverBlocks[i];
+                var nameMatch = block.match(/>\s*<h3>([\s\S]*?)<\/h3>/);
+                var serverName = nameMatch ? nameMatch[1].trim() : "Server " + (i+1);
 
-        for (var i = 0; i < serverBlocks.length; i++) {
-            var block = serverBlocks[i];
-            var nameMatch = block.match(/<h3>([\s\S]*?)<\/h3>/);
-            var serverName = nameMatch ? nameMatch[1].trim() : "Server " + (i+1);
+                var episodes = [];
+                var epRegex = /<a href="([^"]+)"[^>]*>[\s\S]*?<div class="episode-number">([\s\S]*?)<\/div>/g;
+                var epMatch;
+                
+                while ((epMatch = epRegex.exec(block)) !== null) {
+                    var fullUrl = epMatch[1];
+                    var epSlugMatch = fullUrl.match(/bluphim\.me\/(.+)$/);
+                    var epSlug = epSlugMatch ? epSlugMatch[1].replace(/\/$/, '') : fullUrl;
 
-            var episodes = [];
-            var epRegex = /<a href="([^"]+)"[^>]*>[\s\S]*?<div class="episode-number">([\s\S]*?)<\/div>/g;
-            var epMatch;
-            
-            while ((epMatch = epRegex.exec(block)) !== null) {
-                var fullUrl = epMatch[1];
-                var slugMatch = fullUrl.match(/bluphim\.me\/(.+)$/);
-                var slug = slugMatch ? slugMatch[1].replace(/\/$/, '') : fullUrl;
+                    episodes.push({
+                        id: epSlug, 
+                        name: "Tập " + epMatch[2].trim(),
+                        slug: epSlug 
+                    });
+                }
 
-                episodes.push({
-                    id: slug, // Bắt buộc ID phải là slug để Play Video mượt
-                    name: "Tập " + epMatch[2].trim(),
-                    slug: slug 
-                });
+                if (episodes.length > 0) {
+                    servers.push({ name: serverName, episodes: episodes });
+                }
             }
-
-            if (episodes.length > 0) {
-                servers.push({ name: serverName, episodes: episodes });
+        } else {
+            // NẾU LÀ PHIM LẺ (TỰ TÌM NÚT XEM PHIM)
+            var watchMatch = html.match(/<a href="([^"]+)" class="btn-watch-movie">/i);
+            if (watchMatch) {
+                var singleUrl = watchMatch[1];
+                var singleSlugMatch = singleUrl.match(/bluphim\.me\/(.+)$/);
+                var singleSlug = singleSlugMatch ? singleSlugMatch[1].replace(/\/$/, '') : singleUrl;
+                
+                servers.push({
+                    name: "Vietsub",
+                    episodes: [{
+                        id: singleSlug,
+                        name: "Full",
+                        slug: singleSlug
+                    }]
+                });
             }
         }
 
         return JSON.stringify({
-            id: title, // App dùng ID này để nhận diện phim
+            id: id, 
             title: title,
             posterUrl: posterUrl,
             backdropUrl: posterUrl,
             description: description,
-            category: category,
-            casts: casts,
             servers: servers 
         });
     } catch (error) { 
-        return "null"; 
+        return JSON.stringify({ servers: [] }); 
     }
 }
 
 function parseDetailResponse(html) {
     try {
         var url = "";
-        
-        // Bắt link stream (M3U8) từ HTML của trang Tập Phim
         var match = html.match(/all_sources\s*=\s*\[\s*["']([^"']+)["']/i);
         if (match && match[1]) { 
             url = match[1]; 
