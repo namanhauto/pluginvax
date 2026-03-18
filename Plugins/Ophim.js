@@ -5,7 +5,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "ophim_api",
         "name": "OPhim",
-        "version": "1.0.0",
+        "version": "1.0.1",
         "baseUrl": "https://ophim17.cc",
         "iconUrl": "https://github.com/namanhauto/pluginvax/blob/main/Plugins/Ophim_logo.png?raw=true", // Thay logo cho chuẩn
         "isEnabled": true,
