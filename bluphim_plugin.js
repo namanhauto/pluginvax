@@ -5,7 +5,7 @@ function getManifest() {
     return JSON.stringify({
         "id": "bluphim_me",       
         "name": "BluPhim",           
-        "version": "1.0.7",          
+        "version": "1.0.8",          
         "baseUrl": "https://bluphim.me",
         "iconUrl": "https://bluphim.me/favicon.ico", 
         "isEnabled": true,
@@ -17,9 +17,7 @@ function getManifest() {
 
 function getHomeSections() {
     return JSON.stringify([
-        // Hàng 1: Phim Mới (Grid) để hiện nhiều phim
         { slug: 'phim-moi', title: 'Phim Mới Cập Nhật', type: 'Grid', path: 'danh-sach' },
-        // Các hàng tiếp theo đúng như thanh Menu của Web
         { slug: 'phim-bo', title: 'Phim Bộ', type: 'Horizontal', path: 'danh-sach' },
         { slug: 'phim-le', title: 'Phim Lẻ', type: 'Horizontal', path: 'danh-sach' },
         { slug: 'phim-chieu-rap', title: 'Phim Chiếu Rạp', type: 'Horizontal', path: 'danh-sach' },
@@ -27,28 +25,36 @@ function getHomeSections() {
     ]);
 }
 
-// BỘ LỌC ĐẦY ĐỦ 100% Y NHƯ ẢNH WEB
+// KHAI BÁO BỘ LỌC ĐẦY ĐỦ (ĐÃ SỬA LỖI MẤT MENU)
 function getFilterConfig() {
     return JSON.stringify({
+        // Bắt buộc phải có 'sort' thì App mới cho hiện nút Bộ Lọc
+        sort: [
+            { name: 'Thời gian cập nhật', value: 'modified.time' },
+            { name: 'Năm phát hành', value: 'year' }
+        ],
         categories: [
-            { name: 'Bí Ẩn', slug: 'bi-an' },
-            { name: 'Chính Kịch', slug: 'chinh-kich' },
-            { name: 'Cổ Trang', slug: 'co-trang' },
-            { name: 'Gia Đình', slug: 'gia-dinh' },
-            { name: 'Hài Hước', slug: 'hai-huoc' },
-            { name: 'Hành Động', slug: 'hanh-dong' },
-            { name: 'Hình Sự', slug: 'hinh-su' },
-            { name: 'Khoa Học', slug: 'khoa-hoc' },
-            { name: 'Kinh Dị', slug: 'kinh-di' },
-            { name: 'Phiêu Lưu', slug: 'phieu-luu' },
-            { name: 'Tâm Lý', slug: 'tam-ly' },
-            { name: 'Tình Cảm', slug: 'tinh-cam' },
-            { name: 'Viễn Tưởng', slug: 'vien-tuong' }
+            { name: 'Bí Ẩn', slug: 'bi-an', value: 'bi-an' },
+            { name: 'Chính Kịch', slug: 'chinh-kich', value: 'chinh-kich' },
+            { name: 'Cổ Trang', slug: 'co-trang', value: 'co-trang' },
+            { name: 'Gia Đình', slug: 'gia-dinh', value: 'gia-dinh' },
+            { name: 'Hài Hước', slug: 'hai-huoc', value: 'hai-huoc' },
+            { name: 'Hành Động', slug: 'hanh-dong', value: 'hanh-dong' },
+            { name: 'Hình Sự', slug: 'hinh-su', value: 'hinh-su' },
+            { name: 'Khoa Học', slug: 'khoa-hoc', value: 'khoa-hoc' },
+            { name: 'Kinh Dị', slug: 'kinh-di', value: 'kinh-di' },
+            { name: 'Phiêu Lưu', slug: 'phieu-luu', value: 'phieu-luu' },
+            { name: 'Tâm Lý', slug: 'tam-ly', value: 'tam-ly' },
+            { name: 'Tình Cảm', slug: 'tinh-cam', value: 'tinh-cam' },
+            { name: 'Viễn Tưởng', slug: 'vien-tuong', value: 'vien-tuong' }
         ],
         countries: [
-            { name: 'Âu Mỹ', slug: 'au-my' },
-            { name: 'Hàn Quốc', slug: 'han-quoc' },
-            { name: 'Trung Quốc', slug: 'trung-quoc' }
+            { name: 'Âu Mỹ', slug: 'au-my', value: 'au-my' },
+            { name: 'Hàn Quốc', slug: 'han-quoc', value: 'han-quoc' },
+            { name: 'Trung Quốc', slug: 'trung-quoc', value: 'trung-quoc' },
+            { name: 'Nhật Bản', slug: 'nhat-ban', value: 'nhat-ban' },
+            { name: 'Thái Lan', slug: 'thai-lan', value: 'thai-lan' },
+            { name: 'Việt Nam', slug: 'viet-nam', value: 'viet-nam' }
         ]
     });
 }
@@ -74,7 +80,6 @@ function getUrlList(slug, filtersJson) {
         var page = filters.page || 1;
         var finalSlug = slug;
 
-        // Ưu tiên load link theo danh mục hoặc quốc gia mà user chọn trong bộ lọc
         if (filters.category && filters.category !== "") {
             finalSlug = filters.category;
         } else if (filters.country && filters.country !== "") {
