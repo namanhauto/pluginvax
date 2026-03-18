@@ -3,7 +3,7 @@
 // =============================================================================
 function getManifest() {
     return JSON.stringify({
-        "id": "ophim_api_v1",
+        "id": "ophim_api",
         "name": "OPhim",
         "version": "1.0.1",
         "baseUrl": "https://ophim17.cc",
