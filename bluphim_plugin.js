@@ -123,3 +123,28 @@ function parseDetailResponse(html) {
         "subtitles": []
     });
 }
+// ==========================================
+// PHẦN 6: CẤU HÌNH GIAO DIỆN (TRANG CHỦ & DANH MỤC)
+// ==========================================
+
+function getHomeSections() {
+    return JSON.stringify([
+        { slug: 'phim-moi', title: 'Phim Mới Cập Nhật', type: 'Grid', path: 'danh-sach' },
+        { slug: 'phim-bo', title: 'Phim Bộ', type: 'Horizontal', path: 'danh-sach' },
+        { slug: 'phim-le', title: 'Phim Lẻ', type: 'Horizontal', path: 'danh-sach' },
+        { slug: 'phim-chieu-rap', title: 'Phim Chiếu Rạp', type: 'Horizontal', path: 'danh-sach' },
+        { slug: 'hoat-hinh', title: 'Hoạt Hình', type: 'Horizontal', path: 'danh-sach' }
+    ]);
+}
+
+function getPrimaryCategories() {
+    return JSON.stringify([
+        { name: 'Hành Động', slug: 'hanh-dong' },
+        { name: 'Cổ Trang', slug: 'co-trang' },
+        { name: 'Tình Cảm', slug: 'tinh-cam' },
+        { name: 'Kinh Dị', slug: 'kinh-di' },
+        { name: 'Hài Hước', slug: 'hai-huoc' },
+        { name: 'Phiêu Lưu', slug: 'phieu-luu' },
+        { name: 'Tâm Lý', slug: 'tam-ly' }
+    ]);
+}
