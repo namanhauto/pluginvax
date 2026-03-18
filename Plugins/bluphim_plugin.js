@@ -7,7 +7,7 @@ function getManifest() {
         "name": "BluPhim",           
         "version": "1.0.9",          
         "baseUrl": "https://bluphim.me",
-        "iconUrl": "https://bluphim.me/favicon.ico", 
+        "iconUrl": "https://raw.githubusercontent.com/namanhauto/pluginvax/refs/heads/main/Plugins/bluphim_logo.png", 
         "isEnabled": true,         
         "type": "MOVIE",
         "layoutType": "VERTICAL"
