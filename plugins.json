@@ -12,7 +12,7 @@
             "id": "kkphim_api",
             "name": "KKPhim",
             "version": "1.0.9",
-            "scriptUrl": "https://phimapi.com", 
+            "scriptUrl": "https://github.com/namanhauto/pluginvax/raw/refs/heads/main/Plugins/KKPhim_Plugin.js", 
             "iconUrl": "https://kkphim1.com/favicon.ico"
         }
     ]
