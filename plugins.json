@@ -27,7 +27,7 @@
             "name": "Ophim", 
             "version": "1.0.1",
             "scriptUrl": "https://raw.githubusercontent.com/namanhauto/pluginvax/main/Plugins/Ophim_plugin.js", 
-            "iconUrl": "https://ophim17.cc/assets/images/common/subteam_ophim.ico"
+            "iconUrl": "https://raw.githubusercontent.com/namanhauto/pluginvax/main/Plugins/Ophim_logo.png"
         }
     ]
 }
