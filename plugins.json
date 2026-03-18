@@ -16,14 +16,14 @@
             "iconUrl": "https://raw.githubusercontent.com/namanhauto/pluginvax/main/Plugins/KKphim_logo.png"
         },
         {
-            "id": "yanhh3d_web",       
+            "id": "yanhh3d_web_v1",       
             "name": "YanHH3D", 
             "version": "1.0.1",
             "scriptUrl": "https://raw.githubusercontent.com/namanhauto/pluginvax/main/Plugins/Yanhh3d_plugin.js", 
             "iconUrl": "https://raw.githubusercontent.com/namanhauto/pluginvax/main/Plugins/Yahh3d_logo.png"
         },
         {
-            "id": "ophim_api",       
+            "id": "ophim_api_v1",       
             "name": "Ophim", 
             "version": "1.0.1",
             "scriptUrl": "https://raw.githubusercontent.com/namanhauto/pluginvax/main/Plugins/Ophim_plugin.js", 
