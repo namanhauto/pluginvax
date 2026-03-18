@@ -23,7 +23,7 @@
             "iconUrl": "https://github.com/namanhauto/pluginvax/blob/main/Plugins/Yahh3d_logo.png?raw=true"
         },
         {
-        "id": "ophim_api_v1",       
+        "id": "ophim_api",       
         "name": "Ophim", 
             "version": "1.0.1",
             "scriptUrl": "https://github.com/namanhauto/pluginvax/raw/refs/heads/main/Plugins/Ophim.js", 
