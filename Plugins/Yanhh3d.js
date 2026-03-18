@@ -8,8 +8,7 @@ function getManifest() {
         "version": "1.0.1",          
         "baseUrl": "https://yanhh3d.sh",
         "iconUrl": "iconUrl": "https://raw.githubusercontent.com/namanhauto/pluginvax/main/Plugins/Yahh3d_logo.png", 
-        "isEnabled": true,
-        "isAdult": false,            
+        "isEnabled": true,       
         "type": "MOVIE",
         "layoutType": "VERTICAL"
     });
