@@ -3,7 +3,7 @@
 // =============================================================================
 function getManifest() {
     return JSON.stringify({
-        "id": "yanhh3d_web",       
+        "id": "yanhh3d_web_v1",       
         "name": "YanHH3D",           
         "version": "1.0.1",          
         "baseUrl": "https://yanhh3d.sh",
