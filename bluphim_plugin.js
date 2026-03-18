@@ -119,15 +119,39 @@ function parseMovieDetail(html) {
 }
 
 function parseDetailResponse(html) {
-    var url = "";
-    var match = html.match(/var\s+all_sources\s*=\s*\[\s*"([^"]+)"/);
-    if (match) { url = match[1]; }
+    try {
+        var url = "";
+        
+        // Nâng cấp Regex: Chấp nhận cả nháy đơn ' và nháy kép ", loại bỏ khoảng trắng thừa
+        var match = html.match(/all_sources\s*=\s*\[\s*["']([^"']+)["']/i);
+        if (match && match[1]) { 
+            url = match[1]; 
+        } else {
+            // Phương án dự phòng (Fallback): Nếu giấu m3u8, ta tìm link Iframe
+            var iframeMatch = html.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+            if (iframeMatch) {
+                url = iframeMatch[1];
+            }
+        }
 
-    return JSON.stringify({
-        "url": url,
-        "headers": { "Referer": "https://bluphim.me/", "Origin": "https://bluphim.me/" },
-        "subtitles": []
-    });
+        return JSON.stringify({
+            "url": url,
+            "headers": { 
+                // Giả dạng làm trình duyệt Chrome trên máy tính Windows
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Referer": "https://bluphim.me/", 
+                "Origin": "https://bluphim.me/" 
+            },
+            "subtitles": []
+        });
+    } catch (e) {
+        return JSON.stringify({
+            "url": "",
+            "headers": {},
+            "subtitles": []
+        });
+    }
+}
 }
 // ==========================================
 // PHẦN 6: CẤU HÌNH GIAO DIỆN (TRANG CHỦ & DANH MỤC)
