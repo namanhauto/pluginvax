@@ -3,9 +3,9 @@
 // =============================================================================
 function getManifest() {
     return JSON.stringify({
-        "id": "ophim_api_v1",
-        "name": "OPhim V1",
-        "version": "1.2.1",
+        "id": "ophim_api",
+        "name": "OPhim",
+        "version": "1.0.1",
         "baseUrl": "https://ophim1.com",
         "iconUrl": "https://raw.githubusercontent.com/namanhauto/pluginvax/main/Plugins/Ophim_logo.png",
         "isEnabled": true,
