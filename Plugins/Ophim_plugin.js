@@ -16,7 +16,6 @@ function getManifest() {
 
 function getHomeSections() {
     return JSON.stringify([
-        // Đổi lại slug thuần túy để không bị sập trang Home
         { slug: 'phim-moi-cap-nhat', title: '🔥 Phim Mới Cập Nhật', type: 'Banner', path: 'danh-sach' },
         { slug: 'phim-bo', title: '📺 Phim Bộ', type: 'Horizontal', path: 'danh-sach' },
         { slug: 'phim-le', title: '🎬 Phim Lẻ', type: 'Horizontal', path: 'danh-sach' },
@@ -26,7 +25,7 @@ function getHomeSections() {
 }
 
 // =============================================================================
-// 2. URL GENERATION (BÁM SÁT 100% V1)
+// 2. URL GENERATION
 // =============================================================================
 function getUrlList(slug, filtersJson) {
     try {
@@ -54,14 +53,8 @@ function getUrlCountries() { return "https://ophim1.com/v1/api/quoc-gia"; }
 function getUrlYears() { return "https://ophim1.com/v1/api/nam-phat-hanh"; }
 
 // =============================================================================
-// 3. PARSERS (KHẮC PHỤC LỖI TÀNG HÌNH & CHẬM)
+// 3. PARSERS (TỰ ĐỘNG BẮT DOMAIN ẢNH CỦA OPHIM)
 // =============================================================================
-function fixImageUrl(path) {
-    if (!path) return "";
-    if (path.indexOf('http') === 0) return path;
-    // Ép sang host phimimg.com CDN xịn nhất hiện nay, bao nhanh!
-    return "https://phimimg.com/" + path.replace(/^\/+/, '');
-}
 
 function parseListResponse(apiResponseJson) {
     try {
@@ -69,17 +62,28 @@ function parseListResponse(apiResponseJson) {
         var rawItems = [];
         var currentPage = 1;
         var totalPages = 1;
+        var domainImage = "https://img.ophim.live/uploads/movies/"; // Server ảnh dự phòng của OPhim
 
         if (res.data && res.data.items) {
             rawItems = res.data.items;
+            
+            // Lấy chính xác máy chủ ảnh từ API của OPhim
+            if (res.data.APP_DOMAIN_CDN_IMAGE) {
+                domainImage = res.data.APP_DOMAIN_CDN_IMAGE;
+                if (domainImage.slice(-1) !== '/') domainImage += '/';
+            }
+            
             if (res.data.params && res.data.params.pagination) {
                 var p = res.data.params.pagination;
-                // ÉP KIỂU SỐ (parseInt) để triệt tiêu lỗi "Field totalPages is required"
                 currentPage = parseInt(p.currentPage) || 1;
                 totalPages = parseInt(p.totalPages) || Math.ceil(parseInt(p.totalItems) / parseInt(p.totalItemsPerPage || 24)) || 1;
             }
         } else if (res.items) { 
             rawItems = res.items;
+            if (res.pathImage) {
+                domainImage = res.pathImage;
+                if (domainImage.slice(-1) !== '/') domainImage += '/';
+            }
             if (res.pagination) {
                 currentPage = parseInt(res.pagination.currentPage) || 1;
                 totalPages = parseInt(res.pagination.totalPages) || 1;
@@ -87,11 +91,15 @@ function parseListResponse(apiResponseJson) {
         }
 
         var items = rawItems.map(function(item) {
+            // Ráp máy chủ ảnh gốc với đường dẫn của từng phim
+            var poster = (item.poster_url && item.poster_url.indexOf('http') === 0) ? item.poster_url : domainImage + (item.poster_url || "").replace(/^\/+/, '');
+            var thumb = (item.thumb_url && item.thumb_url.indexOf('http') === 0) ? item.thumb_url : domainImage + (item.thumb_url || "").replace(/^\/+/, '');
+
             return {
                 id: item.slug,
                 title: item.name,
-                posterUrl: fixImageUrl(item.poster_url),
-                backdropUrl: fixImageUrl(item.thumb_url), 
+                posterUrl: poster,
+                backdropUrl: thumb, 
                 year: parseInt(item.year) || 0,
                 quality: item.quality || "FHD",
                 episode_current: item.episode_current || "Full",
@@ -116,6 +124,15 @@ function parseMovieDetail(apiResponseJson) {
         var movie = res.status ? res.data.item : res.movie; 
         if (!movie) return "null";
 
+        var domainImage = "https://img.ophim.live/uploads/movies/";
+        if (res.data && res.data.APP_DOMAIN_CDN_IMAGE) {
+            domainImage = res.data.APP_DOMAIN_CDN_IMAGE;
+            if (domainImage.slice(-1) !== '/') domainImage += '/';
+        }
+
+        var poster = (movie.poster_url && movie.poster_url.indexOf('http') === 0) ? movie.poster_url : domainImage + (movie.poster_url || "").replace(/^\/+/, '');
+        var thumb = (movie.thumb_url && movie.thumb_url.indexOf('http') === 0) ? movie.thumb_url : domainImage + (movie.thumb_url || "").replace(/^\/+/, '');
+
         var episodesRaw = res.status ? movie.episodes : res.episodes;
         var servers = (episodesRaw || []).map(function(server) {
             return {
@@ -130,8 +147,8 @@ function parseMovieDetail(apiResponseJson) {
             id: movie.slug,
             title: movie.name,
             originName: movie.origin_name,
-            posterUrl: fixImageUrl(movie.poster_url),
-            backdropUrl: fixImageUrl(movie.thumb_url),
+            posterUrl: poster,
+            backdropUrl: thumb,
             description: movie.content ? movie.content.replace(/<[^>]*>?/gm, '') : "",
             year: parseInt(movie.year) || 0,
             quality: movie.quality || "FHD",
