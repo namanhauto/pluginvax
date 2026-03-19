@@ -1,11 +1,11 @@
 // =============================================================================
-// 1. CONFIGURATION & METADATA (KHAI BÁO THÂN THẾ YANHH3D)
+// 1. CONFIGURATION & METADATA (YANHH3D V1.0.2)
 // =============================================================================
 function getManifest() {
     return JSON.stringify({
         "id": "yanhh3d_web",       
         "name": "YanHH3D",           
-        "version": "1.0.1",          
+        "version": "1.0.2",          
         "baseUrl": "https://yanhh3d.sh",
         "iconUrl": "https://raw.githubusercontent.com/namanhauto/pluginvax/main/Plugins/Yahh3d_logo.png", 
         "isEnabled": true,       
@@ -75,19 +75,13 @@ function getUrlList(slug, filtersJson) {
 }
 
 function getUrlSearch(keyword, filtersJson) {
-    try {
-        var filters = JSON.parse(filtersJson || "{}");
-        var page = filters.page || 1;
-        return "https://yanhh3d.sh/search?keysearch=" + encodeURIComponent(keyword) + "&page=" + page;
-    } catch (e) {
-        return "https://yanhh3d.sh/search?keysearch=" + encodeURIComponent(keyword);
-    }
+    var page = JSON.parse(filtersJson || "{}").page || 1;
+    return "https://yanhh3d.sh/search?keysearch=" + encodeURIComponent(keyword) + "&page=" + page;
 }
 
 function getUrlDetail(slug) {
     if (slug.indexOf('http') === 0) return slug;
-    slug = slug.replace(/\/+$/, ''); 
-    return "https://yanhh3d.sh/" + slug; 
+    return "https://yanhh3d.sh/" + slug.replace(/^\/+/, ''); 
 }
 
 function getUrlCategories() { return "https://yanhh3d.sh/"; }
@@ -166,7 +160,7 @@ function parseCountriesResponse(html) { return "[]"; }
 function parseYearsResponse(html) { return "[]"; }
 
 // =============================================================================
-// 4. PARSER: CÀO CHI TIẾT & DANH SÁCH TẬP (CỰC KỲ PHỨC TẠP)
+// 4. PARSER: CÀO CHI TIẾT & DANH SÁCH TẬP (ĐÃ ĐƯỢC BỌC THÉP)
 // =============================================================================
 function parseMovieDetail(html) {
     try {
@@ -187,43 +181,77 @@ function parseMovieDetail(html) {
         var descMatch = html.match(/<meta property="og:description" content="([^"]+)"/i) || html.match(/class="film-description m-hide">[\s\S]*?<div class="text">([\s\S]*?)<\/div>/i);
         var description = descMatch ? descMatch[1].replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim() : "Đang cập nhật nội dung...";
 
-        // Bắt Năm phát hành (Nếu có)
         var yearMatch = html.match(/Năm:[\s\S]*?<span class="name">(\d{4})<\/span>/i);
         var year = yearMatch ? parseInt(yearMatch[1]) : 0;
 
-        // Bắt Chất lượng và Trạng thái
         var qualityMatch = html.match(/Thời lượng:[\s\S]*?<span class="name">([^<]+)\[4K\]<\/span>/i);
         var quality = qualityMatch ? "4K" : "HD";
 
-        // MÓC DANH SÁCH TẬP TỪ 2 TAB (THUYẾT MINH VÀ VIETSUB)
         var servers = [];
-        
-        // 1. Cào Tab Thuyết Minh
-        var tmBlockMatch = html.match(/id="top-comment" class="tab-pane active">([\s\S]*?)<\/div>\s*<\/div>\s*<div id="new-comment"/i);
-        if (tmBlockMatch) {
-            var tmEpisodes = [];
-            var epRegex = /<a class="ssl-item ep-item[^>]*href="([^"]+)" title="([^"]+)">/g;
+
+        // HÀM BẮT TẬP SIÊU CẤP: Quét mọi thẻ <a> có chứa class ep-item
+        function extractEpisodes(blockHtml) {
+            var eps = [];
+            var aTagRegex = /<a\s+([^>]+)>/ig;
             var match;
-            while ((match = epRegex.exec(tmBlockMatch[1])) !== null) {
-                var epUrl = match[1];
-                var epSlug = epUrl.indexOf('yanhh3d.sh/') > -1 ? epUrl.split('yanhh3d.sh/')[1].replace(/\/+$/, '') : epUrl;
-                tmEpisodes.push({ id: epSlug, name: "Tập " + match[2], slug: epSlug });
+            while ((match = aTagRegex.exec(blockHtml)) !== null) {
+                var attrs = match[1];
+                // Chỉ nhặt những thẻ a có class là ep-item
+                if (attrs.indexOf('ep-item') > -1) {
+                    var hrefMatch = attrs.match(/href="([^"]+)"/i);
+                    var titleMatch = attrs.match(/title="([^"]+)"/i);
+                    if (hrefMatch) {
+                        var epUrl = hrefMatch[1];
+                        var epSlug = epUrl.indexOf('yanhh3d.sh/') > -1 ? epUrl.split('yanhh3d.sh/')[1].replace(/\/+$/, '') : epUrl;
+                        epSlug = epSlug.replace(/^\/+/, '');
+                        
+                        var epName = titleMatch ? titleMatch[1].trim() : "Full";
+                        if (epName.toLowerCase().indexOf('tập') === -1 && !isNaN(epName.charAt(0))) {
+                            epName = "Tập " + epName; // Tự động thêm chữ Tập nếu chỉ có số
+                        }
+                        
+                        // Chống lặp tập
+                        var exists = false;
+                        for (var i = 0; i < eps.length; i++) {
+                            if (eps[i].id === epSlug) { exists = true; break; }
+                        }
+                        if (!exists) eps.push({ id: epSlug, name: epName, slug: epSlug });
+                    }
+                }
             }
-            if(tmEpisodes.length > 0) servers.push({ name: "Thuyết Minh", episodes: tmEpisodes.reverse() }); // Đảo ngược mảng để Tập 1 lên đầu
+            return eps;
         }
 
-        // 2. Cào Tab Vietsub
-        var vsBlockMatch = html.match(/id="new-comment" class="tab-pane">([\s\S]*?)<\/div>\s*<\/div>\s*<\/div>/i);
-        if (vsBlockMatch) {
-            var vsEpisodes = [];
-            var epRegex = /<a class="ssl-item ep-item[^>]*href="([^"]+)" title="([^"]+)">/g;
-            var match;
-            while ((match = epRegex.exec(vsBlockMatch[1])) !== null) {
-                var epUrl = match[1];
-                var epSlug = epUrl.indexOf('yanhh3d.sh/') > -1 ? epUrl.split('yanhh3d.sh/')[1].replace(/\/+$/, '') : epUrl;
-                vsEpisodes.push({ id: epSlug, name: "Tập " + match[2], slug: epSlug });
+        // Cắt riêng vùng code của từng Tab Thuyết Minh và Vietsub để tránh lẫn lộn
+        var tmSplit = html.split('id="top-comment"');
+        if (tmSplit.length > 1) {
+            var tmHtml = tmSplit[1].split('id="new-comment"')[0] || tmSplit[1];
+            var tmEpisodes = extractEpisodes(tmHtml);
+            if (tmEpisodes.length > 0) servers.push({ name: "Thuyết Minh", episodes: tmEpisodes.reverse() }); // Reverse để tập 1 lên đầu
+        }
+
+        var vsSplit = html.split('id="new-comment"');
+        if (vsSplit.length > 1) {
+            var vsHtml = vsSplit[1].split('class="clearfix"')[0] || vsSplit[1];
+            var vsEpisodes = extractEpisodes(vsHtml);
+            if (vsEpisodes.length > 0) servers.push({ name: "Vietsub", episodes: vsEpisodes.reverse() });
+        }
+
+        // Fallback: Nếu web đổi giao diện ko có Tab, quét toàn trang
+        if (servers.length === 0) {
+            var allEpisodes = extractEpisodes(html);
+            if (allEpisodes.length > 0) {
+                servers.push({ name: "Server Phim", episodes: allEpisodes.reverse() });
+            } else {
+                // Xử lý nút "Xem ngay" cho phim lẻ (Chỉ có 1 tập)
+                var watchBtn = html.match(/href="([^"]+)"[^>]*class="[^"]*btn-play[^"]*"/i) || html.match(/href="([^"]+)"[^>]*>[\s\S]*?Xem ngay/i);
+                if (watchBtn) {
+                    var epUrl = watchBtn[1];
+                    var epSlug = epUrl.indexOf('yanhh3d.sh/') > -1 ? epUrl.split('yanhh3d.sh/')[1].replace(/\/+$/, '') : epUrl;
+                    epSlug = epSlug.replace(/^\/+/, '');
+                    servers.push({ name: "Server Phim", episodes: [{ id: epSlug, name: "Full", slug: epSlug }] });
+                }
             }
-            if(vsEpisodes.length > 0) servers.push({ name: "Vietsub", episodes: vsEpisodes.reverse() });
         }
 
         return JSON.stringify({
@@ -242,13 +270,13 @@ function parseMovieDetail(html) {
 }
 
 // =============================================================================
-// 5. PARSER: TÌM VÀ BÓC LINK VIDEO M3U8/IFRAME BỊ GIẤU TRONG JAVASCRIPT
+// 5. PARSER: TÌM VÀ BÓC LINK VIDEO M3U8/IFRAME BỊ GIẤU
 // =============================================================================
 function parseDetailResponse(html) {
     try {
         var videoUrl = "";
 
-        // 1. Quét tìm tất cả các biến chứa link trong Javascript
+        // Quét tìm tất cả các biến Javascript chứa link
         var checkLink1 = html.match(/var \$checkLink1 = "([^"]+)";/i);
         var checkLink2 = html.match(/var \$checkLink2 = "([^"]+)";/i);
         var checkLink3 = html.match(/var \$checkLink3 = "([^"]+)";/i);
@@ -259,7 +287,6 @@ function parseDetailResponse(html) {
         var checkLink8 = html.match(/var \$checkLink8 = "([^"]+)";/i);
         var checkLink9 = html.match(/var \$checkLink9 = "([^"]+)";/i);
 
-        // 2. Thu thập các link tìm được vào 1 mảng
         var allLinks = [];
         if (checkLink1 && checkLink1[1] !== "") allLinks.push(checkLink1[1]);
         if (checkLink2 && checkLink2[1] !== "") allLinks.push(checkLink2[1]);
@@ -271,8 +298,7 @@ function parseDetailResponse(html) {
         if (checkLink8 && checkLink8[1] !== "") allLinks.push(checkLink8[1]);
         if (checkLink9 && checkLink9[1] !== "") allLinks.push(checkLink9[1]);
 
-        // 3. Phân loại và Ưu tiên chọn Link xịn nhất
-        // Ưu tiên 1: Link trực tiếp .m3u8 (Native Stream) để App Play sướng nhất
+        // Ưu tiên 1: Link trực tiếp .m3u8 (Native Stream)
         for (var i = 0; i < allLinks.length; i++) {
             if (allLinks[i].indexOf('.m3u8') > -1) {
                 videoUrl = allLinks[i];
@@ -280,28 +306,17 @@ function parseDetailResponse(html) {
             }
         }
 
-        // Ưu tiên 2: Nếu không có m3u8, đành xài Iframe nhúng web của họ
+        // Ưu tiên 2: Iframe uy tín
         if (videoUrl === "" && allLinks.length > 0) {
-            videoUrl = allLinks[0]; // Lấy tạm link đầu tiên nếu xui xẻo
-            for (var i = 0; i < allLinks.length; i++) {
-                // Tránh lấy link short.icu hoặc link rác
-                if (allLinks[i].indexOf('avcaption.com') > -1 || allLinks[i].indexOf('dailymotion.com') > -1) {
-                    videoUrl = allLinks[i];
+            videoUrl = allLinks[0]; // Dự phòng
+            for (var j = 0; j < allLinks.length; j++) {
+                if (allLinks[j].indexOf('avcaption.com') > -1 || allLinks[j].indexOf('play-fb-v8') > -1) {
+                    videoUrl = allLinks[j];
                     break;
                 }
             }
         }
 
-        return JSON.stringify({
-            url: videoUrl,
-            headers: { 
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Referer": "https://yanhh3d.sh/", 
-                "Origin": "https://yanhh3d.sh/" 
-            },
-            subtitles: []
-        });
-    } catch (error) { 
-        return JSON.stringify({ url: "", headers: {}, subtitles: [] }); 
-    }
-}
+        // Ưu tiên 3: Nếu web giấu thẳng trong Iframe thay vì JS
+        if (videoUrl === "") {
+            var iframeMatch = html.match(/<iframe[^>]*src="([^"]+)"/i);
